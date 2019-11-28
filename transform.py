@@ -1,4 +1,5 @@
 import numpy as np
+import unittest
 
 
 class Rigid2D(object):
@@ -46,8 +47,17 @@ class Rigid2D(object):
         return _3dof
 
 
+class TestRigid2D(unittest.TestCase):
+    def setUp(self):
+        self.A = Rigid2D(1, 2, np.pi/6)
+        self.B = Rigid2D(3, 3, np.pi/4)
+
+    def tearDown(self):
+        pass
+
+    def test_inverse(self):
+        print(self.A.inverse() * self.B)
+
+
 if __name__=="__main__":
-    A = Rigid2D(1, 2, np.pi/6)
-    B = Rigid2D(3, 3, np.pi/4)
-    print(A.to_3dof())
-    print(A.inverse() * B)
+    unittest.main()
