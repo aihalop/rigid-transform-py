@@ -39,18 +39,16 @@ class Rigid2D(object):
         return C
 
     def __str__(self):
-        return "{}".format(self.homogenity())
-
-    def to_3dof(self):
-        _3dof = list(self.translation())
-        _3dof.append(np.arccos(self._rotation[0, 0]))
-        return _3dof
+        return "({}, {})".format(
+            self.translation(), np.arccos(self._rotation[0, 0])
+        )
 
 
 class TestRigid2D(unittest.TestCase):
     def setUp(self):
         self.A = Rigid2D(1, 2, np.pi/6)
         self.B = Rigid2D(3, 3, np.pi/4)
+        print(self.A)
 
     def tearDown(self):
         pass
