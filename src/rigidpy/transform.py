@@ -26,17 +26,26 @@ class Quaternion(object):
     def vector(self):
         return np.array([self._x, self._y, self._z])
 
-    def __mul__(self, Q):
-        if isinstance(Q, Quaternion):
-            scalar = self.scalar() * Q.scalar() - \
-                     np.dot(self.vector(), Q.vector())
-            vector = self.scalar() * Q.vector() + Q.scalar() * self.vector() + \
-                     np.cross(self.vector(), Q.vector())
+    def __mul__(self, q):
+        if isinstance(q, Quaternion):
+            scalar = self.scalar() * q.scalar() - \
+                     np.dot(self.vector(), q.vector())
+            vector = self.scalar() * q.vector() + q.scalar() * self.vector() + \
+                     np.cross(self.vector(), q.vector())
             return Quaternion(scalar, vector[0], vector[1], vector[2])
-        elif isinstance(Q, numbers.Number):
+        elif isinstance(q, numbers.Number):
             return Quaternion(
-                self._w * Q, self._x * Q, self._y * Q, self._z * Q
+                self._w * q, self._x * q, self._y * q, self._z * q
             )
+
+    def __add__(self, q):
+        if isinstance(q, Quaternion):
+            return Quaternion(
+                self._w + q.w(),
+                self._x + q.x(), self._y + q.y(), self._z + q.z()
+            )
+        elif isinstance(q, numbers.Number):
+            return self + Quaternion(q, 0, 0, 0)
 
     def __str__(self):
         return "(w: {}, x: {}, y: {}, z: {})".format(
@@ -51,6 +60,22 @@ class Quaternion(object):
 
     def conjugation(self):
         return Quaternion(self._w, -self._x, -self._y, -self._z)
+
+    def w(self):
+        return self._w
+    
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+    def z(self):
+        return self._z
+
+    def normalize(self):
+        norm = np.linalg.norm(self.to_list())
+        return Quaternion(*(self.to_list() / norm))
 
 
 class Rigid2D(object):
@@ -155,6 +180,12 @@ class TestQuaternion(unittest.TestCase):
 
         print("Quaternion(1, 0, 0, 0) * 0.2 = {}".format(Quaternion(1, 0, 0, 0) * 0.2))
 
+    def test_addition(self):
+        q1 = Quaternion(1, 0, 0, 0)
+        q2 = Quaternion(0, 1, 0, 0)
+        print("q1 + q2 = {}".format(q1 + q2))
+        print("q1 + 1 = {}".format(q1 + 1))
+
     def test_rotation(self):
         v = (1, 0, 0)
         vq = Quaternion(0, *v)
@@ -172,6 +203,10 @@ class TestQuaternion(unittest.TestCase):
             q.to_list(), Quaternion(0.707107, 0, 0, 0.707107).to_list()
         )
         
+    def test_normalize(self):
+        q = Quaternion(0, 1, 2, 3)
+        print("{} normalize to be {}".format(q, q.normalize()))
+
 
 if __name__=="__main__":
     unittest.main()
