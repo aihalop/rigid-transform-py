@@ -5,6 +5,7 @@
 
 import numpy as np
 import unittest
+import numbers
 
 normalize = lambda v: v / np.linalg.norm(v)
 
@@ -26,14 +27,19 @@ class Quaternion(object):
         return np.array([self._x, self._y, self._z])
 
     def __mul__(self, Q):
-        scalar = self.scalar() * Q.scalar() - \
-                 np.dot(self.vector(), Q.vector())
-        vector = self.scalar() * Q.vector() + Q.scalar() * self.vector() + \
-                 np.cross(self.vector(), Q.vector())
-        return Quaternion(scalar, vector[0], vector[1], vector[2])
+        if isinstance(Q, Quaternion):
+            scalar = self.scalar() * Q.scalar() - \
+                     np.dot(self.vector(), Q.vector())
+            vector = self.scalar() * Q.vector() + Q.scalar() * self.vector() + \
+                     np.cross(self.vector(), Q.vector())
+            return Quaternion(scalar, vector[0], vector[1], vector[2])
+        elif isinstance(Q, numbers.Number):
+            return Quaternion(
+                self._w * Q, self._x * Q, self._y * Q, self._z * Q
+            )
 
     def __str__(self):
-        return "(w: {}, x: {}, y: {}, z:{})".format(
+        return "(w: {}, x: {}, y: {}, z: {})".format(
             self.scalar(), *self.vector()
         )
 
@@ -146,6 +152,8 @@ class TestQuaternion(unittest.TestCase):
         q1 = self.Q * self.Q
         q2 = Quaternion(0.8660254037844387, 0.49999999999999994, 0.0, 0.0)
         np.testing.assert_array_almost_equal(q1.to_list(), q2.to_list())
+
+        print("Quaternion(1, 0, 0, 0) * 0.2 = {}".format(Quaternion(1, 0, 0, 0) * 0.2))
 
     def test_rotation(self):
         v = (1, 0, 0)
