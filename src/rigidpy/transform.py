@@ -18,7 +18,14 @@ class Quaternion(object):
             self._y = y
             self._z = z
         elif not args and kwargs:
-            pass
+            axis = kwargs.get("axis")
+            angle = kwargs.get("angle")
+            if (axis is not None) and (angle is not None):
+                self._w = np.cos(angle * 0.5)
+                self._x, self._y, self._z = np.sin(angle * 0.5) * normalize(axis)
+            else:
+                print("Wrong argument.")
+                
 
     def scalar(self):
         return self._w
@@ -37,6 +44,10 @@ class Quaternion(object):
             return Quaternion(
                 self._w * q, self._x * q, self._y * q, self._z * q
             )
+        elif type(q) in (list, tuple, np.ndarray):
+            assert(len(q) == 3)
+            return self * Quaternion(0, *q)
+
 
     def __add__(self, q):
         if isinstance(q, Quaternion):
@@ -58,7 +69,7 @@ class Quaternion(object):
     def to_list(self):
         return np.array([self._w, self._x, self._y, self._z])
 
-    def conjugation(self):
+    def conjugate(self):
         return Quaternion(self._w, -self._x, -self._y, -self._z)
 
     def w(self):
@@ -166,6 +177,7 @@ class TestQuaternion(unittest.TestCase):
     def setUp(self):
         # angle = pi/6, axis = (1., 0., 0.)
         self.Q = Quaternion(0.9659258262890683, 0.25881904510252074, 0.0, 0.0)
+        self.Q90y = Quaternion(angle=-np.pi / 2, axis=(0, 1, 0))
 
     def treaDown(self):
         pass
@@ -179,6 +191,7 @@ class TestQuaternion(unittest.TestCase):
         np.testing.assert_array_almost_equal(q1.to_list(), q2.to_list())
 
         print("Quaternion(1, 0, 0, 0) * 0.2 = {}".format(Quaternion(1, 0, 0, 0) * 0.2))
+        print("q * v = {}".format(self.Q * [1, 0, 0]))
 
     def test_addition(self):
         q1 = Quaternion(1, 0, 0, 0)
@@ -187,12 +200,9 @@ class TestQuaternion(unittest.TestCase):
         print("q1 + 1 = {}".format(q1 + 1))
 
     def test_rotation(self):
+        print("Q90y = {}".format(self.Q90y))
         v = (1, 0, 0)
-        vq = Quaternion(0, *v)
-        print("v = {}".format(vq))
-        q = Quaternion(0.7071, -0.7071, 0, 0)
-        print("q.conjugation()", q.conjugation())
-        print("q * v * qc = {}".format((q * vq) * q.conjugation()))
+        print("q * v * qc = {}".format(self.Q90y * v * self.Q90y.conjugate()))
 
     def test_quaterion_from_two_vectors(self):
         v1 = [1, 0, 0]
