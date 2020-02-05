@@ -6,6 +6,8 @@
 import numpy as np
 import unittest
 
+normalize = lambda v: v / np.linalg.norm(v)
+
 class Quaternion(object):
     def __init__(self, *args, **kwargs):
         if args and not kwargs:
@@ -40,6 +42,9 @@ class Quaternion(object):
 
     def to_list(self):
         return np.array([self._w, self._x, self._y, self._z])
+
+    def conjugation(self):
+        return Quaternion(self._w, -self._x, -self._y, -self._z)
 
 
 class Rigid2D(object):
@@ -91,6 +96,18 @@ class Rigid2D(object):
         return np.concatenate([self.translation(), np.array([self.angle()])])
 
 
+def quaterion_from_two_vectors(v1, v2):
+    assert(len(v1) == 3)
+    assert(len(v2) == 3)
+    v1 = normalize(v1)
+    v2 = normalize(v2)
+    rotation_vector = np.cross(v1, v2)
+    cos_angle = np.dot(v1, v2)
+    q0 = np.sqrt((cos_angle + 1) * 0.5)
+    qn = np.sqrt((1 - cos_angle) * 0.5) * rotation_vector
+    return Quaternion(q0, qn[0], qn[1], qn[2])
+    
+
 class TestRigid2D(unittest.TestCase):
     def setUp(self):
         self.A = Rigid2D(1, 2, np.pi/6)
@@ -119,6 +136,9 @@ class TestQuaternion(unittest.TestCase):
         # angle = pi/6, axis = (1., 0., 0.)
         self.Q = Quaternion(0.9659258262890683, 0.25881904510252074, 0.0, 0.0)
 
+    def treaDown(self):
+        pass
+        
     def test_initialization(self):
         print("Q: {}".format(self.Q))
 
@@ -127,6 +147,23 @@ class TestQuaternion(unittest.TestCase):
         q2 = Quaternion(0.8660254037844387, 0.49999999999999994, 0.0, 0.0)
         np.testing.assert_array_almost_equal(q1.to_list(), q2.to_list())
 
+    def test_rotation(self):
+        v = (1, 0, 0)
+        vq = Quaternion(0, *v)
+        print("v = {}".format(vq))
+        q = Quaternion(0.7071, -0.7071, 0, 0)
+        print("q.conjugation()", q.conjugation())
+        print("q * v * qc = {}".format((q * vq) * q.conjugation()))
+
+    def test_quaterion_from_two_vectors(self):
+        v1 = [1, 0, 0]
+        v2 = [0, 1, 0]
+        q = quaterion_from_two_vectors(v1, v2)
+        print("test_quaterion_from_two_vectors", q)
+        np.testing.assert_array_almost_equal(
+            q.to_list(), Quaternion(0.707107, 0, 0, 0.707107).to_list()
+        )
+        
 
 if __name__=="__main__":
     unittest.main()
