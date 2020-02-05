@@ -10,6 +10,8 @@ import numbers
 normalize = lambda v: v / np.linalg.norm(v)
 
 class Quaternion(object):
+    '''
+    '''
     def __init__(self, *args, **kwargs):
         if args and not kwargs:
             w, x, y, z = args
@@ -39,7 +41,7 @@ class Quaternion(object):
                      np.dot(self.vector(), q.vector())
             vector = self.scalar() * q.vector() + q.scalar() * self.vector() + \
                      np.cross(self.vector(), q.vector())
-            return Quaternion(scalar, vector[0], vector[1], vector[2])
+            return Quaternion(scalar, *vector)
         elif isinstance(q, numbers.Number):
             return Quaternion(
                 self._w * q, self._x * q, self._y * q, self._z * q
@@ -138,7 +140,7 @@ class Rigid2D(object):
         return np.concatenate([self.translation(), np.array([self.angle()])])
 
 
-def quaterion_from_two_vectors(v1, v2):
+def quaternion_from_two_vectors(v1, v2):
     assert(len(v1) == 3)
     assert(len(v2) == 3)
     v1 = normalize(v1)
@@ -204,11 +206,11 @@ class TestQuaternion(unittest.TestCase):
         v = (1, 0, 0)
         print("q * v * qc = {}".format(self.Q90y * v * self.Q90y.conjugate()))
 
-    def test_quaterion_from_two_vectors(self):
+    def test_quaternion_from_two_vectors(self):
         v1 = [1, 0, 0]
         v2 = [0, 1, 0]
-        q = quaterion_from_two_vectors(v1, v2)
-        print("test_quaterion_from_two_vectors", q)
+        q = quaternion_from_two_vectors(v1, v2)
+        print("test_quaternion_from_two_vectors", q)
         np.testing.assert_array_almost_equal(
             q.to_list(), Quaternion(0.707107, 0, 0, 0.707107).to_list()
         )
