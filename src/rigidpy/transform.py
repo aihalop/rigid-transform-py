@@ -60,8 +60,8 @@ class Quaternion(object):
         elif isinstance(q, numbers.Number):
             return self + Quaternion(q, 0, 0, 0)
 
-    def __str__(self):
-        return "(w: {}, x: {}, y: {}, z: {})".format(
+    def __repr__(self):
+        return "(w: {:.3f}, x: {:.3f}, y: {:.3f}, z: {:.3f})".format(
             self.scalar(), *self.vector()
         )
 
