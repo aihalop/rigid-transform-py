@@ -90,6 +90,23 @@ class Quaternion(object):
         norm = np.linalg.norm(self.to_list())
         return Quaternion(*(self.to_list() / norm))
 
+    def to_Euler(self):
+        pass
+
+
+def euler_to_quaterion(roll, pitch, yaw):
+    cy = np.cos(yaw * 0.5);
+    sy = np.sin(yaw * 0.5);
+    cp = np.cos(pitch * 0.5);
+    sp = np.sin(pitch * 0.5);
+    cr = np.cos(roll * 0.5);
+    sr = np.sin(roll * 0.5);
+    w = cr * cp * cy + sr * sp * sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+    return Quaternion(w, x, y, z)
+
 
 class Rigid2D(object):
     def __init__(self, x=0, y=0, theta=0):
@@ -138,6 +155,19 @@ class Rigid2D(object):
 
     def vectorize(self):
         return np.concatenate([self.translation(), np.array([self.angle()])])
+
+
+class Rigid3D(object):
+    def __init__(self, x, y, z, roll, pitch, yaw):
+        self.translation = np.array([x, y, z])
+        self.quaternion = euler_to_quaterion(roll, pitch, yaw)
+
+    def inverse(self):
+        pass
+
+    def __mul__(self, B):
+        pass
+
 
 
 def quaternion_from_two_vectors(v1, v2):
