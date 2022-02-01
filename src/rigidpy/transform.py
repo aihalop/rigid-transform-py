@@ -65,6 +65,9 @@ class Quaternion(object):
             self.scalar(), *self.vector()
         )
 
+    def inverse(self):
+        return self.conjugate() * (1 / float(np.linalg.norm(self.to_list())))
+
     def matrix(self):
         pass
 
@@ -95,17 +98,9 @@ class Quaternion(object):
 
 
 def euler_to_quaterion(roll, pitch, yaw):
-    cy = np.cos(yaw * 0.5);
-    sy = np.sin(yaw * 0.5);
-    cp = np.cos(pitch * 0.5);
-    sp = np.sin(pitch * 0.5);
-    cr = np.cos(roll * 0.5);
-    sr = np.sin(roll * 0.5);
-    w = cr * cp * cy + sr * sp * sy
-    x = sr * cp * cy - cr * sp * sy
-    y = cr * sp * cy + sr * cp * sy
-    z = cr * cp * sy - sr * sp * cy
-    return Quaternion(w, x, y, z)
+    return Quaternion(angle=roll, axis=(1., 0., 0.)) \
+        * Quaternion(angle=pitch, axis=(0., 1., 0.)) \
+        * Quaternion(angle=yaw, axis=(0., 0., 1.))
 
 
 class Rigid2D(object):
@@ -210,6 +205,7 @@ class TestQuaternion(unittest.TestCase):
         # angle = pi/6, axis = (1., 0., 0.)
         self.Q = Quaternion(0.9659258262890683, 0.25881904510252074, 0.0, 0.0)
         self.Q90y = Quaternion(angle=-np.pi / 2, axis=(0, 1, 0))
+        self.euler_rpy = (0.2, 0.4, 0.6)
 
     def treaDown(self):
         pass
@@ -249,6 +245,18 @@ class TestQuaternion(unittest.TestCase):
         q = Quaternion(0, 1, 2, 3)
         print("{} normalize to be {}".format(q, q.normalize()))
 
+    def test_euler_to_quaternion(self):
+        quaternion = euler_to_quaterion(*self.euler_rpy)
+        print("euler_to_quaternion: quaternion = {}".format(quaternion))
+        print("euler_to_quaternion: quaternion.inverse(): {}".format(quaternion.inverse()))
+        print("euler_to_quaternion: quaternion.conjugate(): {}".format(quaternion.conjugate()))
+        print("identity: {}".format(quaternion * quaternion.inverse()))
+        
+        # print("euler_to_quaternion2 = {}".format(
+        #     quaternion
+        # ))
+        # print("dir(self): {}".format(dir(self)))
+    
 
 if __name__=="__main__":
     unittest.main()
