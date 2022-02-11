@@ -1,4 +1,4 @@
-# Rigid Transformation objects.
+# Rigid Transfrom
 # 
 # Jin Cao <aihalop@gmail.com>
 # 2019-12-2
@@ -13,6 +13,7 @@ class Quaternion(object):
     '''
     '''
     def __init__(self, *args, **kwargs):
+        
         if args and not kwargs:
             w, x, y, z = args
             self._w = w
@@ -27,7 +28,16 @@ class Quaternion(object):
                 self._x, self._y, self._z = np.sin(angle * 0.5) * normalize(axis)
             else:
                 print("Wrong argument.")
-                
+        else:
+            self._w = 1.0;
+            self._x = 0.0;
+            self._y = 0.0;
+            self._z = 0.0;
+            print("len(args): {}".format(len(args)))
+
+    @staticmethod
+    def identity():
+        return Quaternion(1., 0., 0., 0.)
 
     def scalar(self):
         return self._w
@@ -66,7 +76,7 @@ class Quaternion(object):
         )
 
     def inverse(self):
-        return self.conjugate() * (1 / float(np.linalg.norm(self.to_list())))
+        return self.conjugate() * (1 / (self.norm() * self.norm()))
 
     def matrix(self):
         pass
@@ -89,9 +99,11 @@ class Quaternion(object):
     def z(self):
         return self._z
 
-    def normalize(self):
-        norm = np.linalg.norm(self.to_list())
-        return Quaternion(*(self.to_list() / norm))
+    def norm(self):
+        return np.sqrt(self._w * self._w +
+                       self._x * self._x +
+                       self._y * self._y +
+                       self._z * self._z)
 
     def to_Euler(self):
         pass
@@ -153,7 +165,7 @@ class Rigid2D(object):
 
 
 class Rigid3D(object):
-    def __init__(self, x, y, z, roll, pitch, yaw):
+    def __init__(self, x=0., y=0., z=0., roll=0., pitch=0., yaw=0.):
         self.translation = np.array([x, y, z])
         self.quaternion = euler_to_quaterion(roll, pitch, yaw)
 
@@ -207,56 +219,55 @@ class TestQuaternion(unittest.TestCase):
         self.Q90y = Quaternion(angle=-np.pi / 2, axis=(0, 1, 0))
         self.euler_rpy = (0.2, 0.4, 0.6)
 
+        self.q = Quaternion(angle=np.pi / 2, axis=(0.0, 0.0, 1.0))
+        self.q1234 = Quaternion(1, 2, 3, 4)
+
     def treaDown(self):
         pass
-        
+
     def test_initialization(self):
-        print("Q: {}".format(self.Q))
+        identity = Quaternion()
+        self.assertTupleEqual(
+            (identity.w(), identity.x(), identity.y(), identity.z()),
+            (1.0, 0.0, 0.0, 0.0)
+        )
 
     def test_multiple(self):
-        q1 = self.Q * self.Q
-        q2 = Quaternion(0.8660254037844387, 0.49999999999999994, 0.0, 0.0)
-        np.testing.assert_array_almost_equal(q1.to_list(), q2.to_list())
-
-        print("Quaternion(1, 0, 0, 0) * 0.2 = {}".format(Quaternion(1, 0, 0, 0) * 0.2))
-        print("q * v = {}".format(self.Q * [1, 0, 0]))
+        q2 = self.q * self.q
+        diff = np.array([q2.w(), q2.x(), q2.y(), q2.z()]) - np.array([0., 0., 0., 1.0])
+        self.assertAlmostEqual(np.linalg.norm(diff), 0.0)
 
     def test_addition(self):
-        q1 = Quaternion(1, 0, 0, 0)
-        q2 = Quaternion(0, 1, 0, 0)
-        print("q1 + q2 = {}".format(q1 + q2))
-        print("q1 + 1 = {}".format(q1 + 1))
-
-    def test_rotation(self):
-        print("Q90y = {}".format(self.Q90y))
-        v = (1, 0, 0)
-        print("q * v * qc = {}".format(self.Q90y * v * self.Q90y.conjugate()))
+        q = Quaternion(1, 0, 0, 0) + Quaternion(0, 0, 1, 0)
+        self.assertTupleEqual((q.w(), q.x(), q.y(), q.z()), (1, 0, 1, 0))
+        q_and_scaler = Quaternion(0, 0, 0, 0) + 1
+        self.assertTupleEqual(
+            (q_and_scaler.w(), q_and_scaler.x(), q_and_scaler.y(), q_and_scaler.z()),
+            (1, 0, 0, 0)
+        )
 
     def test_quaternion_from_two_vectors(self):
         v1 = [1, 0, 0]
         v2 = [0, 1, 0]
         q = quaternion_from_two_vectors(v1, v2)
-        print("test_quaternion_from_two_vectors", q)
-        np.testing.assert_array_almost_equal(
-            q.to_list(), Quaternion(0.707107, 0, 0, 0.707107).to_list()
-        )
+        diff = np.array([q.w(), q.x(), q.y(), q.z()]) - np.array([0.707107, 0, 0, 0.707107])
+        self.assertAlmostEqual(np.linalg.norm(diff), 0.0, 6)
         
-    def test_normalize(self):
-        q = Quaternion(0, 1, 2, 3)
-        print("{} normalize to be {}".format(q, q.normalize()))
+    def test_conjugate(self):
+        qc = self.q1234.conjugate()
+        self.assertTupleEqual((qc.w(), qc.x(), qc.y(), qc.z()), (1, -2, -3, -4))
 
-    def test_euler_to_quaternion(self):
-        quaternion = euler_to_quaterion(*self.euler_rpy)
-        print("euler_to_quaternion: quaternion = {}".format(quaternion))
-        print("euler_to_quaternion: quaternion.inverse(): {}".format(quaternion.inverse()))
-        print("euler_to_quaternion: quaternion.conjugate(): {}".format(quaternion.conjugate()))
-        print("identity: {}".format(quaternion * quaternion.inverse()))
-        
-        # print("euler_to_quaternion2 = {}".format(
-        #     quaternion
-        # ))
-        # print("dir(self): {}".format(dir(self)))
-    
+    def test_norm(self):
+        self.assertAlmostEqual(self.q1234.norm(), 5.4772, 4)
+
+    def test_inverse(self):
+        q = self.q1234.inverse() * self.q1234
+        i = Quaternion.identity()
+        self.assertTupleEqual(
+            (q.w(), q.x(), q.y(), q.z()),
+            (i.w(), i.x(), i.y(), i.z())
+        )
+
 
 if __name__=="__main__":
     unittest.main()
