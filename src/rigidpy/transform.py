@@ -9,6 +9,11 @@ import numbers
 
 normalize = lambda v: v / np.linalg.norm(v)
 
+skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
+                                     [ v[2],    0., -v[0]],
+                                     [-v[1],  v[0],   0.]])
+
+
 class Quaternion(object):
     '''
     '''
@@ -76,10 +81,14 @@ class Quaternion(object):
         )
 
     def inverse(self):
-        return self.conjugate() * (1 / (self.norm() * self.norm()))
+        return self.conjugate() * (1 / np.square(self.norm()))
 
     def matrix(self):
-        pass
+        v = self.vector()
+        qv = np.reshape(v, (3, 1))
+        R = (self._w * self._w - np.dot(v, v)) * np.identity(3) \
+            + 2 * qv * qv.T + 2 * self._w * skew_symmetric(self.vector())
+        return R
 
     def to_list(self):
         return np.array([self._w, self._x, self._y, self._z])
@@ -104,6 +113,11 @@ class Quaternion(object):
                        self._x * self._x +
                        self._y * self._y +
                        self._z * self._z)
+    
+    def normalized(self):
+        n = self.norm()
+        return Quaternion(self._w / n, self._x / n, self._y / n, self._z / n)
+
 
     def to_Euler(self):
         pass
@@ -267,6 +281,13 @@ class TestQuaternion(unittest.TestCase):
             (q.w(), q.x(), q.y(), q.z()),
             (i.w(), i.x(), i.y(), i.z())
         )
+
+    def test_matrix(self):
+        diff_norm = np.linalg.norm(
+            np.reshape(self.q.matrix(), 9) - np.array([0., -1., 0.,
+                                                       1., 0., 0.,
+                                                       0., 0., 1.]))
+        self.assertAlmostEqual(diff_norm, 0.)
 
 
 if __name__=="__main__":
