@@ -28,9 +28,22 @@ class Quaternion(object):
         elif not args and kwargs:
             axis = kwargs.get("axis")
             angle = kwargs.get("angle")
+            roll = kwargs.get("roll")
+            pitch = kwargs.get("pitch")
+            yaw = kwargs.get("yaw")
             if (axis is not None) and (angle is not None):
                 self._w = np.cos(angle * 0.5)
                 self._x, self._y, self._z = np.sin(angle * 0.5) * normalize(axis)
+            elif (roll is not None) and \
+                 (pitch is not None) and \
+                 (yaw is not None):
+                q = Quaternion(angle=roll, axis=(1., 0., 0.)) \
+                    * Quaternion(angle=pitch, axis=(0., 1., 0.)) \
+                    * Quaternion(angle=yaw, axis=(0., 0., 1.))
+                self._x = q.x()
+                self._y = q.y()
+                self._z = q.z()
+                self._w = q.w()
             else:
                 print("Wrong argument.")
         else:
@@ -179,9 +192,18 @@ class Rigid2D(object):
 
 
 class Rigid3D(object):
-    def __init__(self, x=0., y=0., z=0., roll=0., pitch=0., yaw=0.):
-        self.translation = np.array([x, y, z])
-        self.quaternion = euler_to_quaterion(roll, pitch, yaw)
+    def __init__(self, *args, **kwargs):
+        if len(args) > 0:
+            x, y, z, roll, pitch, yaw = args
+        if len(kwargs) > 0:
+            x = kwargs.get('x')
+            y = kwargs.get('y')
+            z = kwargs.get('z')
+            roll = kwargs.get('roll')
+            pitch = kwargs.get('pitch')
+            yaw = kwargs.get('yaw')
+        self._translation = np.array([x, y, z])
+        self._quaternion = Quaternion(roll=roll, pitch=pitch, yaw=yaw)
 
     def inverse(self):
         pass
@@ -189,6 +211,18 @@ class Rigid3D(object):
     def __mul__(self, B):
         pass
 
+    def rotation(self):
+        return self._quaternion
+
+    def translation(self):
+        return self._translation
+
+    def __repr__(self):
+        return "(xyz,wxyz): ({}, {}, {}, {}, {}, {}, {})".format(
+            *self._translation,
+            self._quaternion.w(), self._quaternion.x(),
+            self._quaternion.y(), self._quaternion.z()
+        )
 
 
 def quaternion_from_two_vectors(v1, v2):
@@ -214,9 +248,10 @@ class TestRigid2D(unittest.TestCase):
         pass
 
     def test_inverse(self):
-        print("A.inverse() * B = {}".format(self.A.inverse() * self.B))
-        print("C.inverse() * C = {}".format(self.C.inverse() * self.C))
-        print("C * C.inverse() = {}".format(self.C * self.C.inverse()))
+        # print("A.inverse() * B = {}".format(self.A.inverse() * self.B))
+        # print("C.inverse() * C = {}".format(self.C.inverse() * self.C))
+        # print("C * C.inverse() = {}".format(self.C * self.C.inverse()))
+        pass
 
     def test_vectorize(self):
         print("self.A.vectorize(): ", self.A.vectorize(), type(self.A.vectorize()))
@@ -224,6 +259,20 @@ class TestRigid2D(unittest.TestCase):
         np.testing.assert_array_almost_equal(
             self.A.vectorize(), [1.0, 2.0, 0.5235987]
         )
+
+
+class TestRigid3D(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_initialization(self):
+        p1 = Rigid3D(x=0, y=0, z=0, roll=0, pitch=0, yaw=0)
+        p2 = Rigid3D(0, 0, 0, 0, 0, 0)
+        print(p1)
+        print(p2)
 
 
 class TestQuaternion(unittest.TestCase):
@@ -236,7 +285,7 @@ class TestQuaternion(unittest.TestCase):
         self.q = Quaternion(angle=np.pi / 2, axis=(0.0, 0.0, 1.0))
         self.q1234 = Quaternion(1, 2, 3, 4)
 
-    def treaDown(self):
+    def tearDown(self):
         pass
 
     def test_initialization(self):
