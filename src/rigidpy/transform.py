@@ -76,7 +76,7 @@ class Quaternion(object):
             )
         elif type(q) in (list, tuple, np.ndarray):
             assert(len(q) == 3)
-            return self * Quaternion(0, *q)
+            return (self * Quaternion(0, *q) * self.conjugate()).vector()
 
 
     def __add__(self, q):
@@ -206,7 +206,7 @@ class Rigid3D(object):
         self._quaternion = Quaternion(roll=roll, pitch=pitch, yaw=yaw)
 
     def inverse(self):
-        pass
+        
 
     def __mul__(self, B):
         pass
@@ -299,6 +299,9 @@ class TestQuaternion(unittest.TestCase):
         q2 = self.q * self.q
         diff = np.array([q2.w(), q2.x(), q2.y(), q2.z()]) - np.array([0., 0., 0., 1.0])
         self.assertAlmostEqual(np.linalg.norm(diff), 0.0)
+
+        diff = self.q * (1., 0., 0.) - np.array([0., 1., 0.])
+        self.assertAlmostEqual(np.linalg.norm(diff), 0.0, 6)
 
     def test_addition(self):
         q = Quaternion(1, 0, 0, 0) + Quaternion(0, 0, 1, 0)
