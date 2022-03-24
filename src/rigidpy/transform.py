@@ -1,4 +1,4 @@
-# Rigid Transfrom
+# Rigid Body Transformation
 # 
 # Jin Cao <aihalop@gmail.com>
 # 2019-12-2
@@ -18,7 +18,6 @@ class Quaternion(object):
     '''
     '''
     def __init__(self, *args, **kwargs):
-        
         if args and not kwargs:
             w, x, y, z = args
             self._w = w
@@ -191,37 +190,72 @@ class Rigid2D(object):
         return np.concatenate([self.translation(), np.array([self.angle()])])
 
 
-class Rigid3D(object):
+class Translation(object):
+    def __init__(self, x=0, y=0, z=0):
+        self._x = x
+        self._y = y
+        self._z = z
+
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+    def z(self):
+        return self._z
+
+    def __add__(self, another):
+        return Translation(
+            self._x + another.x(),
+            self._y + another.y(),
+            self._z + another.z()
+        )
+
+    def __repr__(self):
+        return "xyz: ({}, {}, {})".format(self._x, self._y, self._z)
+
+
+class Rotation(Quaternion):
     def __init__(self, *args, **kwargs):
-        if len(args) > 0:
-            x, y, z, roll, pitch, yaw = args
-        if len(kwargs) > 0:
-            x = kwargs.get('x')
-            y = kwargs.get('y')
-            z = kwargs.get('z')
-            roll = kwargs.get('roll')
-            pitch = kwargs.get('pitch')
-            yaw = kwargs.get('yaw')
-        self._translation = np.array([x, y, z])
-        self._quaternion = Quaternion(roll=roll, pitch=pitch, yaw=yaw)
+        super().__init__(*args, **kwargs)
+
+    def __mul__(self, another):
+        if isinstance(another, Translation):
+            x, y, z = super().__mul__(
+                (another.x(), another.y(), another.z()))
+            return Translation(x, y, z)
+        else:
+            return super().__mul__(another)
+
+class Rigid3D(object):
+    def __init__(self, translation, rotation):
+        self._translation = translation
+        self._rotation = rotation
 
     def inverse(self):
-        
-
-    def __mul__(self, B):
         pass
 
+    def __mul__(self, another):
+        return Rigid3D(
+            self._rotation * another.translation() + self._translation,
+            self._rotation * another.rotation()
+        )
+
     def rotation(self):
-        return self._quaternion
+        return self._rotation
 
     def translation(self):
         return self._translation
 
     def __repr__(self):
-        return "(xyz,wxyz): ({}, {}, {}, {}, {}, {}, {})".format(
-            *self._translation,
-            self._quaternion.w(), self._quaternion.x(),
-            self._quaternion.y(), self._quaternion.z()
+        message_template = \
+            "tranlation(x,y,z), rotation(w,x,y,z):" \
+            + "({}, {}, {}), ({}, {}, {}, {})"
+        return message_template.format(
+            self._translation.x(), self._translation.y(), self._translation.z(),
+            self._rotation.w(), self._rotation.x(),
+            self._rotation.y(), self._rotation.z()
         )
 
 
@@ -260,19 +294,26 @@ class TestRigid2D(unittest.TestCase):
             self.A.vectorize(), [1.0, 2.0, 0.5235987]
         )
 
+class TestRotation(unittest.TestCase):
+    def setUp(self):
+        self.rotation = Rotation(roll=0.0, pitch=0.0, yaw=0.575)
+
+    def test_rotation(self):
+        self.assertAlmostEqual(self.rotation.w(), 0.9589558)
+        self.assertAlmostEqual(self.rotation.z(), 0.2835557)
+
 
 class TestRigid3D(unittest.TestCase):
     def setUp(self):
-        pass
+        self.A = Rigid3D(Translation(0., 0., 0.),
+                         Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        self.B = Rigid3D(Translation(1., 0., 0.),
+                         Rotation(1.0, 0., 0., 0.))
 
-    def tearDown(self):
-        pass
-
-    def test_initialization(self):
-        p1 = Rigid3D(x=0, y=0, z=0, roll=0, pitch=0, yaw=0)
-        p2 = Rigid3D(0, 0, 0, 0, 0, 0)
-        print(p1)
-        print(p2)
+    def test_multiplication(self):
+        print("self.A: ", self.A)
+        print(self.A.rotation() * self.A.translation())
+        print(self.A * self.B)
 
 
 class TestQuaternion(unittest.TestCase):
