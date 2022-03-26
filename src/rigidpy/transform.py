@@ -284,7 +284,8 @@ class Rigid2D(object):
 
 
 class Translation(Vector3):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Rotation(Quaternion):
@@ -299,8 +300,7 @@ class Rotation(Quaternion):
             )
         elif "angle" in kwargs and "axis" in kwargs:
             quaternion = AxisAngle(
-                kwargs.get("angle", kwargs.get("axis")).ToQuaterion()
-            )
+                kwargs["angle"], kwargs["axis"]).ToQuaterion()
             super().__init__(
                 quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
             )
@@ -309,31 +309,35 @@ class Rotation(Quaternion):
 
     def __mul__(self, other):
         if isinstance(other, Translation):
-            x, y, z = super().__mul__(
-                (other.x(), other.y(), other.z()))
-            return Translation(x, y, z)
+            translation = super().__mul__(other)
+            return Translation(
+                translation.x(), translation.y(), translation.z()
+            )
         else:
             return super().__mul__(other)
 
-    def __inverse__(self):
-        return Rotation(super().inverse())
+    def inverse(self):
+        quaternion = super().inverse()
+        return Rotation(
+            quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+        )
 
 
-class Rigid3D(object):
+class Rigid(object):
     def __init__(self, translation, rotation):
         self._translation = translation
         self._rotation = rotation
 
     def inverse(self):
-        return Rigid3D(
-            self._rotation.inverse() * self._translation,
+        return Rigid(
+            -1 * self._rotation.inverse() * self._translation,
             self._rotation.inverse()
         )
 
-    def __mul__(self, another):
-        return Rigid3D(
-            self._rotation * another.translation() + self._translation,
-            self._rotation * another.rotation()
+    def __mul__(self, other):
+        return Rigid(
+            self._rotation * other.translation() + self._translation,
+            self._rotation * other.rotation()
         )
 
     def rotation(self):
@@ -353,8 +357,8 @@ class Rigid3D(object):
         )
 
 
-# class Rigid3D(Rigid):
-#     pass
+class Rigid3D(Rigid):
+    pass
 
 
 # class Rigid2D(Rigid):
@@ -434,24 +438,25 @@ class TestRotation(unittest.TestCase):
         self.assertEqual(self.rotation.inverse() * self.rotation,
                          Quaternion.identity())
 
-'''
-class TestRigid3D(unittest.TestCase):
+
+class TestRigid(unittest.TestCase):
     def setUp(self):
-        self.A = Rigid3D(Translation(0., 0., 0.),
-                         Rotation(roll=0., pitch=0., yaw=np.pi / 2))
-        self.B = Rigid3D(Translation(1., 0., 0.),
-                         Rotation(1.0, 0., 0., 0.))
-        self.C = Rigid3D(Translation(1., 0., 0.),
-                         Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        self.A = Rigid(Translation(0., 0., 0.),
+                       Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        self.B = Rigid(Translation(1., 0., 0.),
+                       Rotation(1.0, 0., 0., 0.))
+        self.C = Rigid(Translation(1., 0., 0.),
+                       Rotation(roll=0., pitch=0., yaw=np.pi / 2))
 
     def test_multiplication(self):
         print("self.A: ", self.A)
-        print(self.A.rotation() * self.A.translation())
-        print(self.A * self.B)
+        # print(self.A.rotation() * self.A.translation())
+        print("self.A * self.B", self.A * self.B)
+        
 
     def test_inverse(self):
         print("self.C.inverse(): ", self.C.inverse())
-'''
+
 
 class TestQuaternion(unittest.TestCase):
     def setUp(self):
