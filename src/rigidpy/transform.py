@@ -8,6 +8,7 @@ import unittest
 import numbers
 import operator
 
+SMALL_NUMBER = 1e-10
 
 normalize = lambda v: v / np.linalg.norm(v)
 
@@ -15,7 +16,6 @@ skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [ v[2],    0., -v[0]],
                                      [-v[1],  v[0],   0.]])
 
-SMALL_NUMBER = 1e-16
 
 class Vector3(object):
     '''
@@ -96,51 +96,84 @@ class Quaternion(object):
     '''
     '''
     def __init__(self, w=1., x=0., y=0., z=0.):
-        self._w = w
-        self._x = x
-        self._y = y
-        self._z = z
+        self._scaler = w
+        self._vector = Vector3(x, y, z)
 
     @staticmethod
     def identity():
         return Quaternion(1., 0., 0., 0.)
 
     def scalar(self):
-        return self._w
+        return self._scaler
 
     def vector(self):
-        return np.array([self._x, self._y, self._z])
+        return np.array([self._vector.x(), self._vector.y(), self._vector.z()])
 
-    def __mul__(self, q):
-        if isinstance(q, Quaternion):
-            scalar = self.scalar() * q.scalar() - \
-                     np.dot(self.vector(), q.vector())
-            vector = self.scalar() * q.vector() + q.scalar() * self.vector() + \
-                     np.cross(self.vector(), q.vector())
+    def __mul__(self, other):
+        if isinstance(other, Quaternion):
+            scalar = self.scalar() * other.scalar() \
+                - np.dot(self.vector(), other.vector())
+            vector = self.scalar() * other.vector() \
+                + other.scalar() * self.vector() \
+                + np.cross(self.vector(), other.vector())
             return Quaternion(scalar, *vector)
-        elif isinstance(q, numbers.Number):
+        elif isinstance(other, numbers.Number):
             return Quaternion(
-                self._w * q, self._x * q, self._y * q, self._z * q
+                self.w() * other,
+                self.x() * other,
+                self.y() * other,
+                self.z() * other
             )
-        elif type(q) in (list, tuple, np.ndarray):
-            assert(len(q) == 3)
-            return (self * Quaternion(0, *q) * self.conjugate()).vector()
+        elif isinstance(other, Vector3):
+            conjugation = self \
+                * Quaternion(0, other.x(), other.y(), other.z()) \
+                * self.conjugate()
+            return Vector3(*conjugation.vector())
+        else:
+            raise ValueError(
+                "Quaterion can not multiply a object of type {}"
+                .format(type(other))
+            )
 
-
-    def __add__(self, q):
-        if isinstance(q, Quaternion):
+    def __rmul__(self, other):
+        if isinstance(other, numbers.Number):
             return Quaternion(
-                self._w + q.w(),
-                self._x + q.x(), self._y + q.y(), self._z + q.z()
+                self.w() * other,
+                self.x() * other,
+                self.y() * other,
+                self.z() * other
             )
-        elif isinstance(q, numbers.Number):
-            return self + Quaternion(q, 0, 0, 0)
+        else:
+            raise ValueError(
+                "An object of type {} multiply a quaternion is Not Defined."
+                .format(type(other))
+            )
+
+    def __add__(self, other):
+        if isinstance(other, Quaternion):
+            return Quaternion(
+                self.w() + other.w(),
+                self.x() + other.x(),
+                self.y() + other.y(),
+                self.z() + other.z()
+            )
+        elif isinstance(other, numbers.Number):
+            return self + Quaternion(other, 0, 0, 0)
+        else:
+            raise ValueError(
+                "The operation of adding a value of type"
+                "{} to a quaternion is Not Defined."
+                .format(type(other))
+            )
+        
 
     def __eq__(self, other):
         if isinstance(other, Quaternion):
             norm_difference = np.linalg.norm(
-                (self._w - other.w(), self._x - other.x(),
-                 self._y - other.y(), self._z - other.z())
+                (self.w() - other.w(),
+                 self.x() - other.x(),
+                 self.y() - other.y(),
+                 self.z() - other.z())
             )
             return norm_difference < SMALL_NUMBER
         return False
@@ -156,40 +189,38 @@ class Quaternion(object):
     def matrix(self):
         v = self.vector()
         qv = np.reshape(v, (3, 1))
-        R = (self._w * self._w - np.dot(v, v)) * np.identity(3) \
-            + 2 * qv * qv.T + 2 * self._w * skew_symmetric(self.vector())
+        R = (self.w() * self.w() - np.dot(v, v)) * np.identity(3) \
+            + 2 * qv * qv.T + 2 * self.w() * skew_symmetric(self.vector())
         return R
 
-    def to_list(self):
-        return np.array([self._w, self._x, self._y, self._z])
-
     def conjugate(self):
-        return Quaternion(self._w, -self._x, -self._y, -self._z)
+        return Quaternion(self.w(), -self.x(), -self.y(), -self.z())
 
     def w(self):
-        return self._w
+        return self._scaler
     
     def x(self):
-        return self._x
+        return self._vector.x()
 
     def y(self):
-        return self._y
+        return self._vector.y()
 
     def z(self):
-        return self._z
+        return self._vector.z()
 
     def norm(self):
-        return np.sqrt(self._w * self._w +
-                       self._x * self._x +
-                       self._y * self._y +
-                       self._z * self._z)
+        return np.linalg.norm((self.w(), self.x(), self.y(), self.z()))
     
     def normalized(self):
-        n = self.norm()
-        return Quaternion(self._w / n, self._x / n, self._y / n, self._z / n)
+        scale = 1. / self.norm()
+        return Quaternion(
+            self._w * scale,
+            self._x * scale,
+            self._y * scale,
+            self._z * scale
+        )
 
-
-    def to_Euler(self):
+    def ToEuler(self):
         pass
 
 
@@ -341,10 +372,10 @@ class TestVector3(unittest.TestCase):
 class TestAngleAxis(unittest.TestCase):
     def test_angleaxis(self):
         axis_angle = AxisAngle(np.pi / 2, Vector3(0., 0., 2.))
-        self.assertEqual(axis_angle.ToQuaternion(),
-                         Quaternion(0.7071067811865477, 0., 0., 0.7071067811865476))
+        self.assertEqual(
+            axis_angle.ToQuaternion(),
+            Quaternion(0.7071067811865477, 0., 0., 0.7071067811865476))
         
-
 '''
 class TestRigid2D(unittest.TestCase):
     def setUp(self):
@@ -394,20 +425,14 @@ class TestRigid3D(unittest.TestCase):
 
     def test_inverse(self):
         print("self.C.inverse(): ", self.C.inverse())
-
+'''
 
 class TestQuaternion(unittest.TestCase):
     def setUp(self):
-        # angle = pi/6, axis = (1., 0., 0.)
-        self.Q = Quaternion(0.9659258262890683, 0.25881904510252074, 0.0, 0.0)
-        self.Q90y = Quaternion(angle=-np.pi / 2, axis=(0, 1, 0))
-        self.euler_rpy = (0.2, 0.4, 0.6)
-
-        self.q = Quaternion(angle=np.pi / 2, axis=(0.0, 0.0, 1.0))
+        self.q45 = AxisAngle(np.pi / 4, Vector3(0., 0., 1.)).ToQuaternion()
+        self.q90 = AxisAngle(np.pi / 2, Vector3(0., 0., 1.)).ToQuaternion()
+        self.v = Vector3(1., 0., 0.)
         self.q1234 = Quaternion(1, 2, 3, 4)
-
-    def tearDown(self):
-        pass
 
     def test_initialization(self):
         identity = Quaternion()
@@ -417,12 +442,13 @@ class TestQuaternion(unittest.TestCase):
         )
 
     def test_multiple(self):
-        q2 = self.q * self.q
-        diff = np.array([q2.w(), q2.x(), q2.y(), q2.z()]) - np.array([0., 0., 0., 1.0])
-        self.assertAlmostEqual(np.linalg.norm(diff), 0.0)
-
-        diff = self.q * (1., 0., 0.) - np.array([0., 1., 0.])
-        self.assertAlmostEqual(np.linalg.norm(diff), 0.0, 6)
+        self.assertEqual(self.q45 * self.q45, self.q90)
+        self.assertEqual(self.q90 * self.v, Vector3(0., 1., 0.))
+        self.assertEqual(2. * Quaternion(1., 2., 3., 4.),
+                         Quaternion(2., 4., 6., 8.))
+        self.assertRaises(ValueError, lambda: self.q45 * "invalid type")
+        self.assertRaises(ValueError, lambda: [1., 0., 0.] * self.q90)
+        self.assertRaises(ValueError, lambda: self.v * self.q90)
 
     def test_addition(self):
         q = Quaternion(1, 0, 0, 0) + Quaternion(0, 0, 1, 0)
@@ -432,6 +458,8 @@ class TestQuaternion(unittest.TestCase):
             (q_and_scaler.w(), q_and_scaler.x(), q_and_scaler.y(), q_and_scaler.z()),
             (1, 0, 0, 0)
         )
+
+        self.assertRaises(ValueError, lambda: q + "invalid type")
 
     def test_quaternion_from_two_vectors(self):
         v1 = [1, 0, 0]
@@ -457,11 +485,11 @@ class TestQuaternion(unittest.TestCase):
 
     def test_matrix(self):
         diff_norm = np.linalg.norm(
-            np.reshape(self.q.matrix(), 9) - np.array([0., -1., 0.,
+            np.reshape(self.q90.matrix(), 9) - np.array([0., -1., 0.,
                                                        1., 0., 0.,
                                                        0., 0., 1.]))
         self.assertAlmostEqual(diff_norm, 0.)
-'''
+
 
 if __name__=="__main__":
-    unittest.main()
+    unittest.main(exit=False)
