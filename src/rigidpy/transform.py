@@ -25,6 +25,10 @@ class Vector3(object):
         self._y = y
         self._z = z
 
+    @staticmethod
+    def identity(self):
+        return Vector3()
+
     def x(self):
         return self._x
 
@@ -101,7 +105,7 @@ class Quaternion(object):
 
     @staticmethod
     def identity():
-        return Quaternion(1., 0., 0., 0.)
+        return Quaternion()
 
     def scalar(self):
         return self._scaler
@@ -282,17 +286,34 @@ class Rigid2D(object):
 class Translation(Vector3):
     pass
 
+
 class Rotation(Quaternion):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        if "yaw" in kwargs and "roll" in kwargs and "pitch" in kwargs:
+            quaternion = \
+                AxisAngle(kwargs["roll"], Vector3(1, 0, 0)).ToQuaternion() \
+                * AxisAngle(kwargs["pitch"], Vector3(0, 1, 0)).ToQuaternion() \
+                * AxisAngle(kwargs["yaw"], Vector3(0, 0, 1)).ToQuaternion()
+            super().__init__(
+                quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+            )
+        elif "angle" in kwargs and "axis" in kwargs:
+            quaternion = AxisAngle(
+                kwargs.get("angle", kwargs.get("axis")).ToQuaterion()
+            )
+            super().__init__(
+                quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+            )
+        else:
+            super().__init__(*args, **kwargs)
 
-    def __mul__(self, another):
-        if isinstance(another, Translation):
+    def __mul__(self, other):
+        if isinstance(other, Translation):
             x, y, z = super().__mul__(
-                (another.x(), another.y(), another.z()))
+                (other.x(), other.y(), other.z()))
             return Translation(x, y, z)
         else:
-            return super().__mul__(another)
+            return super().__mul__(other)
 
     def __inverse__(self):
         return Rotation(super().inverse())
@@ -400,6 +421,7 @@ class TestRigid2D(unittest.TestCase):
             self.A.vectorize(), [1.0, 2.0, 0.5235987]
         )
 
+'''
 class TestRotation(unittest.TestCase):
     def setUp(self):
         self.rotation = Rotation(roll=0.0, pitch=0.0, yaw=0.575)
@@ -408,7 +430,11 @@ class TestRotation(unittest.TestCase):
         self.assertAlmostEqual(self.rotation.w(), 0.9589558)
         self.assertAlmostEqual(self.rotation.z(), 0.2835557)
 
+    def test_inverse(self):
+        self.assertEqual(self.rotation.inverse() * self.rotation,
+                         Quaternion.identity())
 
+'''
 class TestRigid3D(unittest.TestCase):
     def setUp(self):
         self.A = Rigid3D(Translation(0., 0., 0.),
