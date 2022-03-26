@@ -73,26 +73,29 @@ class Vector3(object):
             return norm_difference < SMALL_NUMBER
         return False
 
+    def normalized(self):
+        return self * (1 / np.linalg.norm((self._x, self._y, self._z)))
+
     def __repr__(self):
         return "xyz: ({}, {}, {})".format(self._x, self._y, self._z)
     
 
 class AxisAngle(object):
-    def __init__(angle, axis):
+    def __init__(self, angle, axis):
         assert isinstance(axis, Vector3)
         self._angle = angle
         self._axis = axis
 
-    def ToQuaterion(self):
+    def ToQuaternion(self):
         w = np.cos(self._angle * 0.5)
-        x, y, z = np.sin(self._angle * 0.5) * normalize(self._axis)
-        return Quaternion(w, x, y, z)
+        v = np.sin(self._angle * 0.5) * self._axis.normalized()
+        return Quaternion(w, v.x(), v.y(), v.z())
         
 
 class Quaternion(object):
     '''
     '''
-    def __init__(self, w, x, y, z):
+    def __init__(self, w=1., x=0., y=0., z=0.):
         self._w = w
         self._x = x
         self._y = y
@@ -133,8 +136,17 @@ class Quaternion(object):
         elif isinstance(q, numbers.Number):
             return self + Quaternion(q, 0, 0, 0)
 
+    def __eq__(self, other):
+        if isinstance(other, Quaternion):
+            norm_difference = np.linalg.norm(
+                (self._w - other.w(), self._x - other.x(),
+                 self._y - other.y(), self._z - other.z())
+            )
+            return norm_difference < SMALL_NUMBER
+        return False
+
     def __repr__(self):
-        return "(w: {:.3f}, x: {:.3f}, y: {:.3f}, z: {:.3f})".format(
+        return "(w: {:.16f}, x: {:.16f}, y: {:.16f}, z: {:.16f})".format(
             self.scalar(), *self.vector()
         )
 
@@ -325,6 +337,13 @@ class TestVector3(unittest.TestCase):
         self.assertEqual(v * 2, Vector3(2., 4., 6.))
         self.assertEqual(3 * v, Vector3(3., 6., 9.))
 
+
+class TestAngleAxis(unittest.TestCase):
+    def test_angleaxis(self):
+        axis_angle = AxisAngle(np.pi / 2, Vector3(0., 0., 2.))
+        self.assertEqual(axis_angle.ToQuaternion(),
+                         Quaternion(0.7071067811865477, 0., 0., 0.7071067811865476))
+        
 
 '''
 class TestRigid2D(unittest.TestCase):
