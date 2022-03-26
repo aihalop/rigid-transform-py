@@ -6,6 +6,8 @@
 import numpy as np
 import unittest
 import numbers
+import operator
+
 
 normalize = lambda v: v / np.linalg.norm(v)
 
@@ -13,44 +15,88 @@ skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [ v[2],    0., -v[0]],
                                      [-v[1],  v[0],   0.]])
 
+SMALL_NUMBER = 1e-16
+
+class Vector3(object):
+    '''
+    '''
+    def __init__(self, x=0., y=0., z=0):
+        self._x = x
+        self._y = y
+        self._z = z
+
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+    def z(self):
+        return self._z
+
+    def __iadd__(self, other):
+        assert isinstance(other, Vector3)
+        self._x += other.x()
+        self._y += other.y()
+        self._z += other.z()
+        return self
+
+    def __add__(self, other):
+        if not isinstance(other, Vector3):
+            raise ValueError("{} is not a type of Vector3".format(other))
+        return Vector3(
+            self._x + other.x(), self._y + other.y(), self._z + other.z()
+        )
+
+    def __radd__(self, other):
+        if not isinstance(other, Vector3):
+            raise ValueError("{} is not a type of Vector3".format(other))
+        return Vector3(
+            self._x + other.x(), self._y + other.y(), self._z + other.z()
+        )
+
+    def __mul__(self, other):
+        if not isinstance(other, numbers.Number):
+            raise ValueError("{} is not a valid number.".format(other))
+        return Vector3(other * self._x, other * self._y, other * self._z)
+
+    def __rmul__(self, other):
+        if not isinstance(other, numbers.Number):
+            raise ValueError("{} is not a valid number.".format(other))
+        return Vector3(other * self._x, other * self._y, other * self._z)
+
+    def __eq__(self, other):
+        if isinstance(other, Vector3):
+            norm_difference = np.linalg.norm(
+                (self._x - other.x(), self._y - other.y(), self._z - other.z())
+            )
+            return norm_difference < SMALL_NUMBER
+        return False
+
+    def __repr__(self):
+        return "xyz: ({}, {}, {})".format(self._x, self._y, self._z)
+    
+
+class AxisAngle(object):
+    def __init__(angle, axis):
+        assert isinstance(axis, Vector3)
+        self._angle = angle
+        self._axis = axis
+
+    def ToQuaterion(self):
+        w = np.cos(self._angle * 0.5)
+        x, y, z = np.sin(self._angle * 0.5) * normalize(self._axis)
+        return Quaternion(w, x, y, z)
+        
 
 class Quaternion(object):
     '''
     '''
-    def __init__(self, *args, **kwargs):
-        if args and not kwargs:
-            w, x, y, z = args
-            self._w = w
-            self._x = x
-            self._y = y
-            self._z = z
-        elif not args and kwargs:
-            axis = kwargs.get("axis")
-            angle = kwargs.get("angle")
-            roll = kwargs.get("roll")
-            pitch = kwargs.get("pitch")
-            yaw = kwargs.get("yaw")
-            if (axis is not None) and (angle is not None):
-                self._w = np.cos(angle * 0.5)
-                self._x, self._y, self._z = np.sin(angle * 0.5) * normalize(axis)
-            elif (roll is not None) and \
-                 (pitch is not None) and \
-                 (yaw is not None):
-                q = Quaternion(angle=roll, axis=(1., 0., 0.)) \
-                    * Quaternion(angle=pitch, axis=(0., 1., 0.)) \
-                    * Quaternion(angle=yaw, axis=(0., 0., 1.))
-                self._x = q.x()
-                self._y = q.y()
-                self._z = q.z()
-                self._w = q.w()
-            else:
-                print("Wrong argument.")
-        else:
-            self._w = 1.0;
-            self._x = 0.0;
-            self._y = 0.0;
-            self._z = 0.0;
-            print("len(args): {}".format(len(args)))
+    def __init__(self, w, x, y, z):
+        self._w = w
+        self._x = x
+        self._y = y
+        self._z = z
 
     @staticmethod
     def identity():
@@ -190,31 +236,8 @@ class Rigid2D(object):
         return np.concatenate([self.translation(), np.array([self.angle()])])
 
 
-class Translation(object):
-    def __init__(self, x=0, y=0, z=0):
-        self._x = x
-        self._y = y
-        self._z = z
-
-    def x(self):
-        return self._x
-
-    def y(self):
-        return self._y
-
-    def z(self):
-        return self._z
-
-    def __add__(self, another):
-        return Translation(
-            self._x + another.x(),
-            self._y + another.y(),
-            self._z + another.z()
-        )
-
-    def __repr__(self):
-        return "xyz: ({}, {}, {})".format(self._x, self._y, self._z)
-
+class Translation(Vector3):
+    pass
 
 class Rotation(Quaternion):
     def __init__(self, *args, **kwargs):
@@ -228,13 +251,20 @@ class Rotation(Quaternion):
         else:
             return super().__mul__(another)
 
+    def __inverse__(self):
+        return Rotation(super().inverse())
+
+
 class Rigid3D(object):
     def __init__(self, translation, rotation):
         self._translation = translation
         self._rotation = rotation
 
     def inverse(self):
-        pass
+        return Rigid3D(
+            self._rotation.inverse() * self._translation,
+            self._rotation.inverse()
+        )
 
     def __mul__(self, another):
         return Rigid3D(
@@ -259,6 +289,16 @@ class Rigid3D(object):
         )
 
 
+# class Rigid3D(Rigid):
+#     pass
+
+
+# class Rigid2D(Rigid):
+#     def __init__(self):
+#         pass
+
+    
+
 def quaternion_from_two_vectors(v1, v2):
     assert(len(v1) == 3)
     assert(len(v2) == 3)
@@ -269,8 +309,24 @@ def quaternion_from_two_vectors(v1, v2):
     q0 = np.sqrt((cos_angle + 1) * 0.5)
     qn = np.sqrt((1 - cos_angle) * 0.5) * rotation_vector
     return Quaternion(q0, qn[0], qn[1], qn[2])
-    
 
+
+class TestVector3(unittest.TestCase):
+    def test_vector_plus(self):
+        v1 = Vector3(1., 1., 1.)
+        v2 = Vector3(1., 2., 3.)
+        v1 += v2
+        self.assertEqual(v1 + v2, Vector3(3., 5., 7.))
+        self.assertRaises(ValueError, operator.add, 1.0, v1)
+        self.assertRaises(ValueError, operator.add, v1, 1.0)
+
+    def test_vector_multiple(self):
+        v = Vector3(1., 2., 3.)
+        self.assertEqual(v * 2, Vector3(2., 4., 6.))
+        self.assertEqual(3 * v, Vector3(3., 6., 9.))
+
+
+'''
 class TestRigid2D(unittest.TestCase):
     def setUp(self):
         self.A = Rigid2D(1, 2, np.pi/6)
@@ -309,11 +365,16 @@ class TestRigid3D(unittest.TestCase):
                          Rotation(roll=0., pitch=0., yaw=np.pi / 2))
         self.B = Rigid3D(Translation(1., 0., 0.),
                          Rotation(1.0, 0., 0., 0.))
+        self.C = Rigid3D(Translation(1., 0., 0.),
+                         Rotation(roll=0., pitch=0., yaw=np.pi / 2))
 
     def test_multiplication(self):
         print("self.A: ", self.A)
         print(self.A.rotation() * self.A.translation())
         print(self.A * self.B)
+
+    def test_inverse(self):
+        print("self.C.inverse(): ", self.C.inverse())
 
 
 class TestQuaternion(unittest.TestCase):
@@ -381,7 +442,7 @@ class TestQuaternion(unittest.TestCase):
                                                        1., 0., 0.,
                                                        0., 0., 1.]))
         self.assertAlmostEqual(diff_norm, 0.)
-
+'''
 
 if __name__=="__main__":
     unittest.main()
