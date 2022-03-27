@@ -324,13 +324,13 @@ class Rotation(Quaternion):
 
 
 class Rigid(object):
-    def __init__(self, translation, rotation):
+    def __init__(self, translation=Translation(), rotation=Rotation()):
         self._translation = translation
         self._rotation = rotation
 
     def inverse(self):
         return Rigid(
-            -1 * self._rotation.inverse() * self._translation,
+            -1 * (self._rotation.inverse() * self._translation),
             self._rotation.inverse()
         )
 
@@ -339,6 +339,10 @@ class Rigid(object):
             self._rotation * other.translation() + self._translation,
             self._rotation * other.rotation()
         )
+
+    def __eq__(self, other):
+        return self._rotation == other.rotation() and \
+            self._translation == other.translation()
 
     def rotation(self):
         return self._rotation
@@ -441,21 +445,26 @@ class TestRotation(unittest.TestCase):
 
 class TestRigid(unittest.TestCase):
     def setUp(self):
-        self.A = Rigid(Translation(0., 0., 0.),
+        self.A = Rigid(Translation(1., 0., 0.),
                        Rotation(roll=0., pitch=0., yaw=np.pi / 2))
         self.B = Rigid(Translation(1., 0., 0.),
                        Rotation(1.0, 0., 0., 0.))
-        self.C = Rigid(Translation(1., 0., 0.),
-                       Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        self.C = Rigid(Translation(0., 1., 0.),
+                       Rotation(roll=0., pitch=0., yaw=np.pi / 4))
 
     def test_multiplication(self):
-        print("self.A: ", self.A)
-        # print(self.A.rotation() * self.A.translation())
-        print("self.A * self.B", self.A * self.B)
+        T_AB = self.A * self.B
+        self.assertEqual(T_AB.translation(), Translation(1., 1., 0.))
+        self.assertEqual(
+            T_AB.rotation(), Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        T_AC = self.A * self.C
+        self.assertEqual(T_AC.translation(), Translation(0., 0., 0.))
+        self.assertEqual(
+            T_AC.rotation(),
+            Rotation(roll=0., pitch=0., yaw=(np.pi / 2 + np.pi / 4)))
         
-
     def test_inverse(self):
-        print("self.C.inverse(): ", self.C.inverse())
+        self.assertEqual(self.A.inverse() * self.A, Rigid())
 
 
 class TestQuaternion(unittest.TestCase):
