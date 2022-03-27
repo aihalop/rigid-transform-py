@@ -335,10 +335,22 @@ class Rigid(object):
         )
 
     def __mul__(self, other):
+        if not isinstance(other, Rigid):
+            raise ValueError(
+                "A Rigid object can not multiply an object of type {}".format(
+                    type(other))
+            )
         return Rigid(
             self._rotation * other.translation() + self._translation,
             self._rotation * other.rotation()
         )
+        
+    def __rmul__(self, other):
+        if not isinstance(other, Rigid):
+            raise ValueError(
+                "A Rigid object can not multiply an object of type {}".format(
+                    type(other))
+            )
 
     def __eq__(self, other):
         return self._rotation == other.rotation() and \
@@ -465,6 +477,11 @@ class TestRigid(unittest.TestCase):
         
     def test_inverse(self):
         self.assertEqual(self.A.inverse() * self.A, Rigid())
+
+    def test_exception(self):
+        invalid_float_value = 1.0
+        self.assertRaises(ValueError, lambda: self.A * invalid_float_value)
+        self.assertRaises(ValueError, lambda: invalid_float_value * self.A)
 
 
 class TestQuaternion(unittest.TestCase):
