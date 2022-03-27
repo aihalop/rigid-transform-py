@@ -170,7 +170,6 @@ class Quaternion(object):
                 .format(type(other))
             )
         
-
     def __eq__(self, other):
         if isinstance(other, Quaternion):
             norm_difference = np.linalg.norm(
@@ -225,62 +224,21 @@ class Quaternion(object):
         )
 
     def ToEuler(self):
-        pass
+        '''--> (roll, pitch, yaw)
+        '''
+        w, x, y, z = self.w(), self.x(), self.y(), self.z()
+        roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
+        sinp = np.arcsin(2 * (w * y - z * x))
+        pitch = np.copysign(np.pi / 2, sinp) \
+            if abs(sinp) >= 1 else np.arcsin(sinp)
+        yaw = np.arctan2(2 * (w * z + x * y), 1 - 2 * (y**2 + z**2))
+        return (roll, pitch, yaw)
 
 
 def euler_to_quaterion(roll, pitch, yaw):
     return Quaternion(angle=roll, axis=(1., 0., 0.)) \
         * Quaternion(angle=pitch, axis=(0., 1., 0.)) \
         * Quaternion(angle=yaw, axis=(0., 0., 1.))
-
-
-class Rigid2D(object):
-    def __init__(self, x=0, y=0, theta=0):
-        self._rotation = np.array([
-            [np.cos(theta), -np.sin(theta)],
-            [np.sin(theta), np.cos(theta)]
-        ])
-        self._translation = np.array([x, y])
-
-    def rotation(self):
-        return self._rotation
-
-    def translation(self):
-        return self._translation
-
-    def inverse(self):
-        T = Rigid2D()
-        T._rotation = self._rotation.T
-        T._translation = -1 * np.dot(T._rotation, self._translation)
-        return T
-
-    def homogenity(self):
-        return np.concatenate((
-            np.concatenate((
-                self._rotation,
-                np.expand_dims(self._translation, axis=0).T), axis=1
-            ),
-            [[0, 0, 1]]), axis=0
-        )
-
-    def __mul__(self, B):
-        C = Rigid2D()
-        C._rotation = np.dot(self.rotation(), B.rotation())
-        C._translation = np.dot(self.rotation(), B.translation()) + \
-                         self.translation()
-        return C
-
-    def __str__(self):
-        return "({}, {})".format(
-            self.translation(),
-            self.angle()
-        )
-
-    def angle(self):
-        return np.arctan2(self._rotation[1, 0], self._rotation[0, 0])
-
-    def vectorize(self):
-        return np.concatenate([self.translation(), np.array([self.angle()])])
 
 
 class Translation(Vector3):
@@ -377,11 +335,38 @@ class Rigid3D(Rigid):
     pass
 
 
-# class Rigid2D(Rigid):
-#     def __init__(self):
-#         pass
+class Rigid2D(Rigid):
+    def __init__(self, x=0, y=0, theta=0):
+        super().__init__(
+            Translation(x, y, 0.),
+            Rotation(roll=0.0, pitch=0.0, yaw=theta)
+        )
 
+    def x(self):
+        return self._translation.x()
+
+    def y(self):
+        return self._translation.y()
+
+    def theta(self):
+        roll, pitch, yaw = self._rotation.ToEuler()
+        return yaw
+
+    def inverse(self):
+        _inverse = super().inverse()
+        x, y = _inverse.translation().x(), _inverse.translation().y()
+        roll, pitch, yaw = _inverse.rotation().ToEuler()
+        return Rigid2D(x, y, yaw)
+
+    def __mul__(self, B):
+        rigid = super().__mul__(B)
+        x, y = rigid.translation().x(), rigid.translation().y()
+        roll, pitch, yaw = rigid.rotation().ToEuler()
+        return Rigid2D(x, y, yaw)
     
+    def __repr__(self):
+        return "x,y,theta: {}, {}, {}".format(self.x(), self.y(), self.theta())
+
 
 def quaternion_from_two_vectors(v1, v2):
     assert(len(v1) == 3)
@@ -417,31 +402,19 @@ class TestAngleAxis(unittest.TestCase):
             axis_angle.ToQuaternion(),
             Quaternion(0.7071067811865477, 0., 0., 0.7071067811865476))
         
-'''
+
 class TestRigid2D(unittest.TestCase):
     def setUp(self):
-        self.A = Rigid2D(1, 2, np.pi/6)
-        self.B = Rigid2D(3, 3, np.pi/4)
-        self.C = Rigid2D(0, 0, np.pi / 4)
-        print("A = {}, B = {}".format(self.A, self.B))
-
-    def tearDown(self):
-        pass
+        self.A = Rigid2D(1., 0., np.pi / 2)
+        self.B = Rigid2D(1., 0., 0.)
 
     def test_inverse(self):
-        # print("A.inverse() * B = {}".format(self.A.inverse() * self.B))
-        # print("C.inverse() * C = {}".format(self.C.inverse() * self.C))
-        # print("C * C.inverse() = {}".format(self.C * self.C.inverse()))
-        pass
+        self.assertEqual(self.A * self.A.inverse(), Rigid())
 
-    def test_vectorize(self):
-        print("self.A.vectorize(): ", self.A.vectorize(), type(self.A.vectorize()))
-        self.assertEqual(type(self.A.vectorize()), np.ndarray)
-        np.testing.assert_array_almost_equal(
-            self.A.vectorize(), [1.0, 2.0, 0.5235987]
-        )
+    def test_multiply(self):
+        self.assertEqual(self.A * self.B, Rigid2D(1., 1., np.pi / 2.))
 
-'''
+
 class TestRotation(unittest.TestCase):
     def setUp(self):
         self.rotation = Rotation(roll=0.0, pitch=0.0, yaw=0.575)
