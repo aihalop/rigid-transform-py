@@ -10,8 +10,6 @@ import operator
 
 SMALL_NUMBER = 1e-10
 
-normalize = lambda v: v / np.linalg.norm(v)
-
 skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [ v[2],    0., -v[0]],
                                      [-v[1],  v[0],   0.]])
@@ -235,12 +233,6 @@ class Quaternion(object):
         return (roll, pitch, yaw)
 
 
-def euler_to_quaterion(roll, pitch, yaw):
-    return Quaternion(angle=roll, axis=(1., 0., 0.)) \
-        * Quaternion(angle=pitch, axis=(0., 1., 0.)) \
-        * Quaternion(angle=yaw, axis=(0., 0., 1.))
-
-
 class Translation(Vector3):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -368,18 +360,6 @@ class Rigid2D(Rigid):
         return "x,y,theta: {}, {}, {}".format(self.x(), self.y(), self.theta())
 
 
-def quaternion_from_two_vectors(v1, v2):
-    assert(len(v1) == 3)
-    assert(len(v2) == 3)
-    v1 = normalize(v1)
-    v2 = normalize(v2)
-    rotation_vector = np.cross(v1, v2)
-    cos_angle = np.dot(v1, v2)
-    q0 = np.sqrt((cos_angle + 1) * 0.5)
-    qn = np.sqrt((1 - cos_angle) * 0.5) * rotation_vector
-    return Quaternion(q0, qn[0], qn[1], qn[2])
-
-
 class TestVector3(unittest.TestCase):
     def test_vector_plus(self):
         v1 = Vector3(1., 1., 1.)
@@ -491,13 +471,6 @@ class TestQuaternion(unittest.TestCase):
 
         self.assertRaises(ValueError, lambda: q + "invalid type")
 
-    def test_quaternion_from_two_vectors(self):
-        v1 = [1, 0, 0]
-        v2 = [0, 1, 0]
-        q = quaternion_from_two_vectors(v1, v2)
-        diff = np.array([q.w(), q.x(), q.y(), q.z()]) - np.array([0.707107, 0, 0, 0.707107])
-        self.assertAlmostEqual(np.linalg.norm(diff), 0.0, 6)
-        
     def test_conjugate(self):
         qc = self.q1234.conjugate()
         self.assertTupleEqual((qc.w(), qc.x(), qc.y(), qc.z()), (1, -2, -3, -4))
