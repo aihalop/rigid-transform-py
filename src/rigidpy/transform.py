@@ -388,11 +388,11 @@ class Rigid(object):
         )
 
 
-class Rigid3D(Rigid):
+class Rigid3(Rigid):
     pass
 
 
-class Rigid2D(Rigid):
+class Rigid2(Rigid):
     def __init__(self, x=0, y=0, theta=0):
         super().__init__(
             Translation(x, y, 0.),
@@ -416,7 +416,7 @@ class Rigid2D(Rigid):
         _inverse = super().inverse()
         x, y = _inverse.translation.x, _inverse.translation.y
         roll, pitch, yaw = _inverse.rotation.ToEuler()
-        return Rigid2D(x, y, yaw)
+        return Rigid2(x, y, yaw)
 
     def __mul__(self, other):
         if isinstance(other, Vector2):
@@ -432,7 +432,7 @@ class Rigid2D(Rigid):
             )
             x, y = rigid.translation.x, rigid.translation.y
             roll, pitch, yaw = rigid.rotation.ToEuler()
-            return Rigid2D(x, y, yaw)
+            return Rigid2(x, y, yaw)
         else:
             raise ValueError(
                 "A Rigid2 can not be multiplied by an object of type {}".format(
@@ -476,19 +476,19 @@ class TestAngleAxis(unittest.TestCase):
             Quaternion(0.7071067811865477, 0., 0., 0.7071067811865476))
         
 
-class TestRigid2D(unittest.TestCase):
+class TestRigid2(unittest.TestCase):
     def setUp(self):
-        self.A = Rigid2D(1., 0., np.pi / 2)
-        self.B = Rigid2D(1., 0., 0.)
+        self.A = Rigid2(1., 0., np.pi / 2)
+        self.B = Rigid2(1., 0., 0.)
 
     def test_inverse(self):
         self.assertEqual(self.A * self.A.inverse(), Rigid())
 
     def test_multiply(self):
-        self.assertEqual(self.A * self.B, Rigid2D(1., 1., np.pi / 2.))
+        self.assertEqual(self.A * self.B, Rigid2(1., 1., np.pi / 2.))
 
     def test_multiply_vector(self):
-        rigid2 = Rigid2D(2., 1., np.pi / 2)
+        rigid2 = Rigid2(2., 1., np.pi / 2)
         vector = Vector2(1.0, 0.)
         self.assertEqual(rigid2 * vector, Vector2(2.0, 2.0))
 
