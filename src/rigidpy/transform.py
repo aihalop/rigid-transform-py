@@ -298,8 +298,8 @@ class Rigid(object):
                     type(other))
             )
         return Rigid(
-            self._rotation * other.translation() + self._translation,
-            self._rotation * other.rotation()
+            self._rotation * other.translation + self._translation,
+            self._rotation * other.rotation
         )
         
     def __rmul__(self, other):
@@ -310,12 +310,14 @@ class Rigid(object):
             )
 
     def __eq__(self, other):
-        return self._rotation == other.rotation() and \
-            self._translation == other.translation()
+        return self._rotation == other.rotation and \
+            self._translation == other.translation
 
+    @property
     def rotation(self):
         return self._rotation
 
+    @property
     def translation(self):
         return self._translation
 
@@ -356,8 +358,8 @@ class Rigid2D(Rigid):
 
     def inverse(self):
         _inverse = super().inverse()
-        x, y = _inverse.translation().x, _inverse.translation().y
-        roll, pitch, yaw = _inverse.rotation().ToEuler()
+        x, y = _inverse.translation.x, _inverse.translation.y
+        roll, pitch, yaw = _inverse.rotation.ToEuler()
         return Rigid2D(x, y, yaw)
 
     def __mul__(self, B):
@@ -367,8 +369,8 @@ class Rigid2D(Rigid):
             Rigid(Translation(B.x, B.y, 0.),
                   Rotation(roll=0., pitch=0., yaw=B.theta))
         )
-        x, y = rigid.translation().x, rigid.translation().y
-        roll, pitch, yaw = rigid.rotation().ToEuler()
+        x, y = rigid.translation.x, rigid.translation.y
+        roll, pitch, yaw = rigid.rotation.ToEuler()
         return Rigid2D(x, y, yaw)
     
     def __repr__(self):
@@ -434,13 +436,13 @@ class TestRigid(unittest.TestCase):
 
     def test_multiplication(self):
         T_AB = self.A * self.B
-        self.assertEqual(T_AB.translation(), Translation(1., 1., 0.))
+        self.assertEqual(T_AB.translation, Translation(1., 1., 0.))
         self.assertEqual(
-            T_AB.rotation(), Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+            T_AB.rotation, Rotation(roll=0., pitch=0., yaw=np.pi / 2))
         T_AC = self.A * self.C
-        self.assertEqual(T_AC.translation(), Translation(0., 0., 0.))
+        self.assertEqual(T_AC.translation, Translation(0., 0., 0.))
         self.assertEqual(
-            T_AC.rotation(),
+            T_AC.rotation,
             Rotation(roll=0., pitch=0., yaw=(np.pi / 2 + np.pi / 4)))
         
     def test_inverse(self):
