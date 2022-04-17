@@ -348,15 +348,18 @@ class Rigid(object):
         )
 
     def __mul__(self, other):
-        if not isinstance(other, Rigid):
+        if isinstance(other, Vector3):
+            return self._rotation * other + self._translation
+        elif isinstance(other, Rigid):
+            return Rigid(
+                self._rotation * other.translation + self._translation,
+                self._rotation * other.rotation
+            )
+        else:
             raise ValueError(
                 "A Rigid object can not multiply an object of type {}".format(
                     type(other))
             )
-        return Rigid(
-            self._rotation * other.translation + self._translation,
-            self._rotation * other.rotation
-        )
         
     def __rmul__(self, other):
         if not isinstance(other, Rigid):
@@ -514,7 +517,7 @@ class TestRigid(unittest.TestCase):
         self.C = Rigid(Translation(0., 1., 0.),
                        Rotation(roll=0., pitch=0., yaw=np.pi / 4))
 
-    def test_multiplication(self):
+    def test_multiply(self):
         T_AB = self.A * self.B
         self.assertEqual(T_AB.translation, Translation(1., 1., 0.))
         self.assertEqual(
@@ -524,6 +527,11 @@ class TestRigid(unittest.TestCase):
         self.assertEqual(
             T_AC.rotation,
             Rotation(roll=0., pitch=0., yaw=(np.pi / 2 + np.pi / 4)))
+
+    def test_multiply_vector(self):
+        T = Rigid(Translation(1., 1., 1.), Rotation(roll=0., pitch=0., yaw=np.pi / 2))
+        vector = Translation(1., 0., 1.)
+        self.assertEqual(T * vector, Translation(1., 2., 2.))
         
     def test_inverse(self):
         self.assertEqual(self.A.inverse() * self.A, Rigid())
