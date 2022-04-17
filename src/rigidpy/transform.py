@@ -14,6 +14,62 @@ skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [ v[2],    0., -v[0]],
                                      [-v[1],  v[0],   0.]])
 
+class Vector2(object):
+    def __init__(self, x=0., y=0.):
+        self._x = x
+        self._y = y
+
+    @staticmethod
+    def identity(self):
+        return Vector2()
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    def __iadd__(self, other):
+        assert isinstance(other, Vector2)
+        self._x += other.x
+        self._y += other.y
+        return self
+
+    def __add__(self, other):
+        if not isinstance(other, Vector2):
+            raise ValueError("{} is not a type of Vector2".format(other))
+        return Vector2(self.x + other.x, self.y + other.y)
+
+    def __radd__(self, other):
+        if not isinstance(other, Vector2):
+            raise ValueError("{} is not a type of Vector2".format(other))
+        return Vector2(self.x + other.x, self.y + other.y)
+
+    def __mul__(self, other):
+        if not isinstance(other, numbers.Number):
+            raise ValueError("{} is not a valid number.".format(other))
+        return Vector2(other * self.x, other * self.y)
+
+    def __rmul__(self, other):
+        if not isinstance(other, numbers.Number):
+            raise ValueError("{} is not a valid number.".format(other))
+        return Vector2(other * self.x, other * self.y)
+
+    def __eq__(self, other):
+        if isinstance(other, Vector2):
+            norm_difference = \
+                np.linalg.norm((self.x - other.x, self.y - other.y))
+            return norm_difference < SMALL_NUMBER
+        return False
+
+    def normalized(self):
+        return self * (1 / np.linalg.norm((self.x, self.y)))
+
+    def __repr__(self):
+        return "xy: ({}, {})".format(self.x, self.y)
+
 
 class Vector3(object):
     '''
