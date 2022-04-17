@@ -216,7 +216,6 @@ class Quaternion(object):
     def z(self):
         return self._vector.z
 
-    @property
     def norm(self):
         return np.linalg.norm((self.w, self.x, self.y, self.z))
     
@@ -363,8 +362,11 @@ class Rigid2D(Rigid):
 
     def __mul__(self, B):
         # TODO(Jin Cao): assert B be a 2-dimentional vector.
-        assert len(B) == 2
-        rigid = super().__mul__((B[0], B[1], 0.))
+        # assert len(B) == 2
+        rigid = super().__mul__(
+            Rigid(Translation(B.x, B.y, 0.),
+                  Rotation(roll=0., pitch=0., yaw=B.theta))
+        )
         x, y = rigid.translation().x, rigid.translation().y
         roll, pitch, yaw = rigid.rotation().ToEuler()
         return Rigid2D(x, y, yaw)
