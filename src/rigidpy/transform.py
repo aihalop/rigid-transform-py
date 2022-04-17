@@ -418,20 +418,40 @@ class Rigid2D(Rigid):
         roll, pitch, yaw = _inverse.rotation.ToEuler()
         return Rigid2D(x, y, yaw)
 
-    def __mul__(self, B):
-        # TODO(Jin Cao): assert B be a 2-dimentional vector.
-        # assert len(B) == 2
-        rigid = super().__mul__(
-            Rigid(Translation(B.x, B.y, 0.),
-                  Rotation(roll=0., pitch=0., yaw=B.theta))
-        )
-        x, y = rigid.translation.x, rigid.translation.y
-        roll, pitch, yaw = rigid.rotation.ToEuler()
-        return Rigid2D(x, y, yaw)
-    
+    def __mul__(self, other):
+        if isinstance(other, Vector2):
+            rigid = super().__mul__(
+                Rigid(Translation(other.x, other.y, 0.), Rotation())
+            )
+            x, y = rigid.translation.x, rigid.translation.y
+            return Vector2(x, y)
+        elif isinstance(other, Rigid):
+            rigid = super().__mul__(
+                Rigid(Translation(other.x, other.y, 0.),
+                      Rotation(roll=0., pitch=0., yaw=other.theta))
+            )
+            x, y = rigid.translation.x, rigid.translation.y
+            roll, pitch, yaw = rigid.rotation.ToEuler()
+            return Rigid2D(x, y, yaw)
+        else:
+            raise ValueError(
+                "A Rigid2 can not be multiplied by an object of type {}".format(
+                    type(other))
+            )
+
     def __repr__(self):
         return "x,y,theta: {}, {}, {}".format(self.x, self.y, self.theta)
 
+
+class TestVector2(unittest.TestCase):
+    def test_vector_plus(self):
+        v1 = Vector2(1., 2.)
+        v2 = Vector2(3., 4.)
+        self.assertEqual(v1 + v2, Vector2(4., 6.))
+
+    def test_vector_multiple(self):
+        v = Vector2(2.0, 3.0)
+        self.assertEqual(v * 4, Vector2(8.0, 12.0))
 
 class TestVector3(unittest.TestCase):
     def test_vector_plus(self):
@@ -467,6 +487,10 @@ class TestRigid2D(unittest.TestCase):
     def test_multiply(self):
         self.assertEqual(self.A * self.B, Rigid2D(1., 1., np.pi / 2.))
 
+    def test_multiply_vector(self):
+        rigid2 = Rigid2D(2., 1., np.pi / 2)
+        vector = Vector2(1.0, 0.)
+        self.assertEqual(rigid2 * vector, Vector2(2.0, 2.0))
 
 class TestRotation(unittest.TestCase):
     def setUp(self):
