@@ -27,59 +27,62 @@ class Vector3(object):
     def identity(self):
         return Vector3()
 
+    @property
     def x(self):
         return self._x
 
+    @property
     def y(self):
         return self._y
 
+    @property
     def z(self):
         return self._z
 
     def __iadd__(self, other):
         assert isinstance(other, Vector3)
-        self._x += other.x()
-        self._y += other.y()
-        self._z += other.z()
+        self._x += other.x
+        self._y += other.y
+        self._z += other.z
         return self
 
     def __add__(self, other):
         if not isinstance(other, Vector3):
             raise ValueError("{} is not a type of Vector3".format(other))
         return Vector3(
-            self._x + other.x(), self._y + other.y(), self._z + other.z()
+            self.x + other.x, self.y + other.y, self.z + other.z
         )
 
     def __radd__(self, other):
         if not isinstance(other, Vector3):
             raise ValueError("{} is not a type of Vector3".format(other))
         return Vector3(
-            self._x + other.x(), self._y + other.y(), self._z + other.z()
+            self.x + other.x, self.y + other.y, self.z + other.z
         )
 
     def __mul__(self, other):
         if not isinstance(other, numbers.Number):
             raise ValueError("{} is not a valid number.".format(other))
-        return Vector3(other * self._x, other * self._y, other * self._z)
+        return Vector3(other * self.x, other * self.y, other * self.z)
 
     def __rmul__(self, other):
         if not isinstance(other, numbers.Number):
             raise ValueError("{} is not a valid number.".format(other))
-        return Vector3(other * self._x, other * self._y, other * self._z)
+        return Vector3(other * self.x, other * self.y, other * self.z)
 
     def __eq__(self, other):
         if isinstance(other, Vector3):
             norm_difference = np.linalg.norm(
-                (self._x - other.x(), self._y - other.y(), self._z - other.z())
+                (self.x - other.x, self.y - other.y, self.z - other.z)
             )
             return norm_difference < SMALL_NUMBER
         return False
 
     def normalized(self):
-        return self * (1 / np.linalg.norm((self._x, self._y, self._z)))
+        return self * (1 / np.linalg.norm((self.x, self.y, self.z)))
 
     def __repr__(self):
-        return "xyz: ({}, {}, {})".format(self._x, self._y, self._z)
+        return "xyz: ({}, {}, {})".format(self.x, self.y, self.z)
     
 
 class AxisAngle(object):
@@ -91,7 +94,7 @@ class AxisAngle(object):
     def ToQuaternion(self):
         w = np.cos(self._angle * 0.5)
         v = np.sin(self._angle * 0.5) * self._axis.normalized()
-        return Quaternion(w, v.x(), v.y(), v.z())
+        return Quaternion(w, v.x, v.y, v.z)
         
 
 class Quaternion(object):
@@ -109,7 +112,7 @@ class Quaternion(object):
         return self._scaler
 
     def vector(self):
-        return np.array([self._vector.x(), self._vector.y(), self._vector.z()])
+        return np.array([self._vector.x, self._vector.y, self._vector.z])
 
     def __mul__(self, other):
         if isinstance(other, Quaternion):
@@ -121,14 +124,14 @@ class Quaternion(object):
             return Quaternion(scalar, *vector)
         elif isinstance(other, numbers.Number):
             return Quaternion(
-                self.w() * other,
-                self.x() * other,
-                self.y() * other,
-                self.z() * other
+                self.w * other,
+                self.x * other,
+                self.y * other,
+                self.z * other
             )
         elif isinstance(other, Vector3):
             conjugation = self \
-                * Quaternion(0, other.x(), other.y(), other.z()) \
+                * Quaternion(0, other.x, other.y, other.z) \
                 * self.conjugate()
             return Vector3(*conjugation.vector())
         else:
@@ -140,10 +143,10 @@ class Quaternion(object):
     def __rmul__(self, other):
         if isinstance(other, numbers.Number):
             return Quaternion(
-                self.w() * other,
-                self.x() * other,
-                self.y() * other,
-                self.z() * other
+                self.w * other,
+                self.x * other,
+                self.y * other,
+                self.z * other
             )
         else:
             raise ValueError(
@@ -154,10 +157,10 @@ class Quaternion(object):
     def __add__(self, other):
         if isinstance(other, Quaternion):
             return Quaternion(
-                self.w() + other.w(),
-                self.x() + other.x(),
-                self.y() + other.y(),
-                self.z() + other.z()
+                self.w + other.w,
+                self.x + other.x,
+                self.y + other.y,
+                self.z + other.z
             )
         elif isinstance(other, numbers.Number):
             return self + Quaternion(other, 0, 0, 0)
@@ -171,10 +174,10 @@ class Quaternion(object):
     def __eq__(self, other):
         if isinstance(other, Quaternion):
             norm_difference = np.linalg.norm(
-                (self.w() - other.w(),
-                 self.x() - other.x(),
-                 self.y() - other.y(),
-                 self.z() - other.z())
+                (self.w - other.w,
+                 self.x - other.x,
+                 self.y - other.y,
+                 self.z - other.z)
             )
             return norm_difference < SMALL_NUMBER
         return False
@@ -190,27 +193,32 @@ class Quaternion(object):
     def matrix(self):
         v = self.vector()
         qv = np.reshape(v, (3, 1))
-        R = (self.w() * self.w() - np.dot(v, v)) * np.identity(3) \
-            + 2 * qv * qv.T + 2 * self.w() * skew_symmetric(self.vector())
+        R = (self.w * self.w - np.dot(v, v)) * np.identity(3) \
+            + 2 * qv * qv.T + 2 * self.w * skew_symmetric(self.vector())
         return R
 
     def conjugate(self):
-        return Quaternion(self.w(), -self.x(), -self.y(), -self.z())
+        return Quaternion(self.w, -self.x, -self.y, -self.z)
 
+    @property
     def w(self):
         return self._scaler
     
+    @property
     def x(self):
-        return self._vector.x()
+        return self._vector.x
 
+    @property
     def y(self):
-        return self._vector.y()
+        return self._vector.y
 
+    @property
     def z(self):
-        return self._vector.z()
+        return self._vector.z
 
+    @property
     def norm(self):
-        return np.linalg.norm((self.w(), self.x(), self.y(), self.z()))
+        return np.linalg.norm((self.w, self.x, self.y, self.z))
     
     def normalized(self):
         scale = 1. / self.norm()
@@ -224,7 +232,7 @@ class Quaternion(object):
     def ToEuler(self):
         '''--> (roll, pitch, yaw)
         '''
-        w, x, y, z = self.w(), self.x(), self.y(), self.z()
+        w, x, y, z = self.w, self.x, self.y, self.z
         roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
         sinp = np.arcsin(2 * (w * y - z * x))
         pitch = np.copysign(np.pi / 2, sinp) \
@@ -246,13 +254,13 @@ class Rotation(Quaternion):
                 * AxisAngle(kwargs["pitch"], Vector3(0, 1, 0)).ToQuaternion() \
                 * AxisAngle(kwargs["yaw"], Vector3(0, 0, 1)).ToQuaternion()
             super().__init__(
-                quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+                quaternion.w, quaternion.x, quaternion.y, quaternion.z
             )
         elif "angle" in kwargs and "axis" in kwargs:
             quaternion = AxisAngle(
                 kwargs["angle"], kwargs["axis"]).ToQuaterion()
             super().__init__(
-                quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+                quaternion.w, quaternion.x, quaternion.y, quaternion.z
             )
         else:
             super().__init__(*args, **kwargs)
@@ -261,7 +269,7 @@ class Rotation(Quaternion):
         if isinstance(other, Translation):
             translation = super().__mul__(other)
             return Translation(
-                translation.x(), translation.y(), translation.z()
+                translation.x, translation.y, translation.z
             )
         else:
             return super().__mul__(other)
@@ -269,7 +277,7 @@ class Rotation(Quaternion):
     def inverse(self):
         quaternion = super().inverse()
         return Rotation(
-            quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()
+            quaternion.w, quaternion.x, quaternion.y, quaternion.z
         )
 
 
@@ -317,9 +325,9 @@ class Rigid(object):
             "tranlation(x,y,z), rotation(w,x,y,z):" \
             + "({}, {}, {}), ({}, {}, {}, {})"
         return message_template.format(
-            self._translation.x(), self._translation.y(), self._translation.z(),
-            self._rotation.w(), self._rotation.x(),
-            self._rotation.y(), self._rotation.z()
+            self._translation.x, self._translation.y, self._translation.z,
+            self._rotation.w, self._rotation.x,
+            self._rotation.y, self._rotation.z
         )
 
 
@@ -334,30 +342,35 @@ class Rigid2D(Rigid):
             Rotation(roll=0.0, pitch=0.0, yaw=theta)
         )
 
+    @property
     def x(self):
-        return self._translation.x()
+        return self._translation.x
 
+    @property
     def y(self):
-        return self._translation.y()
-
+        return self._translation.y
+    
+    @property
     def theta(self):
         roll, pitch, yaw = self._rotation.ToEuler()
         return yaw
 
     def inverse(self):
         _inverse = super().inverse()
-        x, y = _inverse.translation().x(), _inverse.translation().y()
+        x, y = _inverse.translation().x, _inverse.translation().y
         roll, pitch, yaw = _inverse.rotation().ToEuler()
         return Rigid2D(x, y, yaw)
 
     def __mul__(self, B):
-        rigid = super().__mul__(B)
-        x, y = rigid.translation().x(), rigid.translation().y()
+        # TODO(Jin Cao): assert B be a 2-dimentional vector.
+        assert len(B) == 2
+        rigid = super().__mul__((B[0], B[1], 0.))
+        x, y = rigid.translation().x, rigid.translation().y
         roll, pitch, yaw = rigid.rotation().ToEuler()
         return Rigid2D(x, y, yaw)
     
     def __repr__(self):
-        return "x,y,theta: {}, {}, {}".format(self.x(), self.y(), self.theta())
+        return "x,y,theta: {}, {}, {}".format(self.x, self.y, self.theta)
 
 
 class TestVector3(unittest.TestCase):
@@ -400,8 +413,8 @@ class TestRotation(unittest.TestCase):
         self.rotation = Rotation(roll=0.0, pitch=0.0, yaw=0.575)
 
     def test_rotation(self):
-        self.assertAlmostEqual(self.rotation.w(), 0.9589558)
-        self.assertAlmostEqual(self.rotation.z(), 0.2835557)
+        self.assertAlmostEqual(self.rotation.w, 0.9589558)
+        self.assertAlmostEqual(self.rotation.z, 0.2835557)
 
     def test_inverse(self):
         self.assertEqual(self.rotation.inverse() * self.rotation,
@@ -447,7 +460,7 @@ class TestQuaternion(unittest.TestCase):
     def test_initialization(self):
         identity = Quaternion()
         self.assertTupleEqual(
-            (identity.w(), identity.x(), identity.y(), identity.z()),
+            (identity.w, identity.x, identity.y, identity.z),
             (1.0, 0.0, 0.0, 0.0)
         )
 
@@ -462,10 +475,10 @@ class TestQuaternion(unittest.TestCase):
 
     def test_addition(self):
         q = Quaternion(1, 0, 0, 0) + Quaternion(0, 0, 1, 0)
-        self.assertTupleEqual((q.w(), q.x(), q.y(), q.z()), (1, 0, 1, 0))
+        self.assertTupleEqual((q.w, q.x, q.y, q.z), (1, 0, 1, 0))
         q_and_scaler = Quaternion(0, 0, 0, 0) + 1
         self.assertTupleEqual(
-            (q_and_scaler.w(), q_and_scaler.x(), q_and_scaler.y(), q_and_scaler.z()),
+            (q_and_scaler.w, q_and_scaler.x, q_and_scaler.y, q_and_scaler.z),
             (1, 0, 0, 0)
         )
 
@@ -473,7 +486,7 @@ class TestQuaternion(unittest.TestCase):
 
     def test_conjugate(self):
         qc = self.q1234.conjugate()
-        self.assertTupleEqual((qc.w(), qc.x(), qc.y(), qc.z()), (1, -2, -3, -4))
+        self.assertTupleEqual((qc.w, qc.x, qc.y, qc.z), (1, -2, -3, -4))
 
     def test_norm(self):
         self.assertAlmostEqual(self.q1234.norm(), 5.4772, 4)
@@ -482,8 +495,8 @@ class TestQuaternion(unittest.TestCase):
         q = self.q1234.inverse() * self.q1234
         i = Quaternion.identity()
         self.assertTupleEqual(
-            (q.w(), q.x(), q.y(), q.z()),
-            (i.w(), i.x(), i.y(), i.z())
+            (q.w, q.x, q.y, q.z),
+            (i.w, i.x, i.y, i.z)
         )
 
     def test_matrix(self):
