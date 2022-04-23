@@ -67,6 +67,9 @@ class Vector2(object):
     def normalized(self):
         return self * (1 / np.linalg.norm((self.x, self.y)))
 
+    def norm(self):
+        return np.linalg.norm([self.x, self.y])
+
     def __repr__(self):
         return "xy: ({}, {})".format(self.x, self.y)
 
@@ -136,6 +139,9 @@ class Vector3(object):
 
     def normalized(self):
         return self * (1 / np.linalg.norm((self.x, self.y, self.z)))
+
+    def norm(self):
+        return np.linalg.norm([self.x, self.y, self.z])
 
     def __repr__(self):
         return "xyz: ({}, {}, {})".format(self.x, self.y, self.z)
@@ -456,6 +462,9 @@ class TestVector2(unittest.TestCase):
         v = Vector2(2.0, 3.0)
         self.assertEqual(v * 4, Vector2(8.0, 12.0))
 
+    def test_norm(self):
+        self.assertEqual(Vector2(3., 4.).norm(), 5.0)
+
 class TestVector3(unittest.TestCase):
     def test_vector_plus(self):
         v1 = Vector3(1., 1., 1.)
@@ -470,6 +479,8 @@ class TestVector3(unittest.TestCase):
         self.assertEqual(v * 2, Vector3(2., 4., 6.))
         self.assertEqual(3 * v, Vector3(3., 6., 9.))
 
+    def test_norm(self):
+        self.assertEqual(Vector3(2,3,6).norm(), 7)
 
 class TestAngleAxis(unittest.TestCase):
     def test_angleaxis(self):
