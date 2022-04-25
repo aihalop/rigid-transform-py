@@ -15,12 +15,15 @@ skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [-v[1],  v[0],   0.]])
 
 class Vector2(object):
+    '''Representing an object living in 2-dementional Euclidean space.'''
+
     def __init__(self, x=0., y=0.):
         self._x = x
         self._y = y
 
     @staticmethod
     def identity(self):
+        '''Return vector (0, 0) in 2-dementional Euclidean space.'''
         return Vector2()
 
     @property
@@ -65,9 +68,11 @@ class Vector2(object):
         return False
 
     def normalized(self):
+        '''Return normalized vector2.'''
         return self * (1 / np.linalg.norm((self.x, self.y)))
 
     def norm(self):
+        '''Return Euclidean distance of the vector2.'''
         return np.linalg.norm([self.x, self.y])
 
     def __repr__(self):
@@ -75,8 +80,8 @@ class Vector2(object):
 
 
 class Vector3(object):
-    '''
-    '''
+    '''Representing an object living in 3-dementional Euclidean space.'''
+
     def __init__(self, x=0., y=0., z=0):
         self._x = x
         self._y = y
@@ -84,6 +89,7 @@ class Vector3(object):
 
     @staticmethod
     def identity(self):
+        '''Return vector (0, 0, 0) in 3-dementional Euclidean space.'''
         return Vector3()
 
     @property
@@ -148,6 +154,7 @@ class Vector3(object):
     
 
 class AxisAngle(object):
+    """Representing rotation in axis-angle."""
     def __init__(self, angle, axis):
         assert isinstance(axis, Vector3)
         self._angle = angle
@@ -160,8 +167,6 @@ class AxisAngle(object):
         
 
 class Quaternion(object):
-    '''
-    '''
     def __init__(self, w=1., x=0., y=0., z=0.):
         self._scaler = w
         self._vector = Vector3(x, y, z)
@@ -291,8 +296,7 @@ class Quaternion(object):
         )
 
     def ToEuler(self):
-        '''--> (roll, pitch, yaw)
-        '''
+        """Returen Euler angle representation of the corresponding rotation."""
         w, x, y, z = self.w, self.x, self.y, self.z
         roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
         sinp = np.arcsin(2 * (w * y - z * x))
@@ -303,11 +307,13 @@ class Quaternion(object):
 
 
 class Translation(Vector3):
+    """Representing Translation by Vector3"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 class Rotation(Quaternion):
+    """Representing Rotation by Quaternion."""
     def __init__(self, *args, **kwargs):
         if "yaw" in kwargs and "roll" in kwargs and "pitch" in kwargs:
             quaternion = \
@@ -343,6 +349,8 @@ class Rotation(Quaternion):
 
 
 class Rigid(object):
+    """Representing Rigid Transformation."""
+
     def __init__(self, translation=Translation(), rotation=Rotation()):
         self._translation = translation
         self._rotation = rotation
@@ -398,10 +406,12 @@ class Rigid(object):
 
 
 class Rigid3(Rigid):
+    """Representing Rigid Transformation living in SE(3)."""
     pass
 
 
 class Rigid2(Rigid):
+    """Representing Rigid Transformation living in SE(2)."""
     def __init__(self, x=0, y=0, theta=0):
         super().__init__(
             Translation(x, y, 0.),
