@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.1",
     author="Jin Cao",
     author_email="aihalop@gmail.com",
-    description="Library for Rigid Transform.",
+    description="Library for Rigid body Transformation.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/pypa/sampleproject",
