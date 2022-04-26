@@ -23,7 +23,7 @@ class Vector2(object):
 
     @staticmethod
     def identity(self):
-        '''Return vector (0, 0) in 2-dementional Euclidean space.'''
+        '''Return vector (0, 0) in 2-dimensional Euclidean space.'''
         return Vector2()
 
     @property
@@ -80,7 +80,7 @@ class Vector2(object):
 
 
 class Vector3(object):
-    '''Representing an object living in 3-dementional Euclidean space.'''
+    '''Representing an object living in 3-dimensional Euclidean space.'''
 
     def __init__(self, x=0., y=0., z=0):
         self._x = x
@@ -89,7 +89,7 @@ class Vector3(object):
 
     @staticmethod
     def identity(self):
-        '''Return vector (0, 0, 0) in 3-dementional Euclidean space.'''
+        '''Return vector (0, 0, 0) in 3-dimensional Euclidean space.'''
         return Vector3()
 
     @property
@@ -296,7 +296,7 @@ class Quaternion(object):
         )
 
     def ToEuler(self):
-        """Returen Euler angle representation of the corresponding rotation."""
+        """Return Euler angle representation of the corresponding rotation."""
         w, x, y, z = self.w, self.x, self.y, self.z
         roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
         sinp = np.arcsin(2 * (w * y - z * x))
@@ -396,7 +396,7 @@ class Rigid(object):
 
     def __repr__(self):
         message_template = \
-            "tranlation(x,y,z), rotation(w,x,y,z):" \
+            "translation(x,y,z), rotation(w,x,y,z):" \
             + "({}, {}, {}), ({}, {}, {}, {})"
         return message_template.format(
             self._translation.x, self._translation.y, self._translation.z,
