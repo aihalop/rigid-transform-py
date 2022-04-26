@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="rigidpy", # Replace with your own username
+    name="rigid-transform-py", # Replace with your own username
     version="0.0.1",
     author="Jin Cao",
     author_email="aihalop@gmail.com",
