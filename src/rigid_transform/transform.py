@@ -15,7 +15,7 @@ skew_symmetric = lambda v: np.array([[   0., -v[2],  v[1]],
                                      [-v[1],  v[0],   0.]])
 
 class Vector2(object):
-    '''Representing an object living in 2-dementional Euclidean space.'''
+    '''Representing an object living in 2-dimensional Euclidean space.'''
 
     def __init__(self, x=0., y=0.):
         self._x = x
