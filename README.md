@@ -46,7 +46,7 @@ print(T * v) # Vector3(xyz: (1.0000, 1.0000, 0.0000))
 
 ## Transform 2D Rigid Body
 
-```
+```python
 from rigid_transform import Rigid2, Translation, Rotation
 import math
 
