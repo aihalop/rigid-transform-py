@@ -16,12 +16,12 @@ from rigid_transform import Rigid3, Translation, Rotation
 import math
 
 T12 = Rigid3(
-	Translation(x=1., y=0., z=0.), 
-	Rotation(roll=0., pitch=0., yaw=math.pi / 2)
+    Translation(x=1., y=0., z=0.), 
+    Rotation(roll=0., pitch=0., yaw=math.pi / 2)
 )
 T23 = Rigid3(
-	Translation(x=1., y=0., z=0.), 
-	Rotation(roll=0., pitch=0., yaw=0.)
+    Translation(x=1., y=0., z=0.), 
+    Rotation(roll=0., pitch=0., yaw=0.)
 )
 T13 = T12 * T23
 print(T13) # Rigid3(T xyz: (1.0000, 1.0000, 0.0000), R wxyz: (0.7071, 0.0000, 0.0000, 0.7071))
