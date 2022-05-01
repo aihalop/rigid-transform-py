@@ -37,8 +37,8 @@ from rigid_transform import Rigid3, Translation, Rotation, Vector3
 import math
 
 T = Rigid3(
-	Translation(x=1., y=0., z=0.), 
-	Rotation(roll=0., pitch=0., yaw=math.pi / 2)
+    Translation(x=1., y=0., z=0.), 
+    Rotation(roll=0., pitch=0., yaw=math.pi / 2)
 )
 v = Vector3(x=1., y=0., z=0.)
 print(T * v) # Vector3(xyz: (1.0000, 1.0000, 0.0000))
