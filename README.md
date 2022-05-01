@@ -4,12 +4,12 @@ This library provides classes to manipulate rigid transformation.
 
 ![demo](images/transform.svg "transform demostration")
 
-# Install
+## Install
 
 
-# Usage
+## Usage
 
-## Transform 3D Rigid Body
+### Transform 3D Rigid Body
 
 ```python
 from rigid_transform import Rigid3, Translation, Rotation
@@ -30,7 +30,7 @@ assert(T23 == T12.inverse() * T13)
 assert(T12 == T13 * T23.inverse())
 ```
 
-## Transform 3D Vector
+### Transform 3D Vector
 
 ```python
 from rigid_transform import Rigid3, Translation, Rotation, Vector3
@@ -44,7 +44,7 @@ v = Vector3(x=1., y=0., z=0.)
 print(T * v) # Vector3(xyz: (1.0000, 1.0000, 0.0000))
 ```
 
-## Transform 2D Rigid Body
+### Transform 2D Rigid Body
 
 ```python
 from rigid_transform import Rigid2, Translation, Rotation
