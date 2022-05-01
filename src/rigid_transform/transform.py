@@ -76,7 +76,7 @@ class Vector2(object):
         return np.linalg.norm([self.x, self.y])
 
     def __repr__(self):
-        return "xy: ({}, {})".format(self.x, self.y)
+        return "Vector2(xy: ({}, {}))".format(self.x, self.y)
 
 
 class Vector3(object):
@@ -150,7 +150,7 @@ class Vector3(object):
         return np.linalg.norm([self.x, self.y, self.z])
 
     def __repr__(self):
-        return "xyz: ({}, {}, {})".format(self.x, self.y, self.z)
+        return "Vector3(xyz: ({:.4f}, {:.4f}, {:.4f}))".format(self.x, self.y, self.z)
     
 
 class AxisAngle(object):
@@ -250,7 +250,7 @@ class Quaternion(object):
         return False
 
     def __repr__(self):
-        return "(w: {:.16f}, x: {:.16f}, y: {:.16f}, z: {:.16f})".format(
+        return "Quaternion(wxyz: ({:.4f}, {:.4f}, {:.4f}, {:.4f}))".format(
             self.scalar(), *self.vector()
         )
 
@@ -296,7 +296,10 @@ class Quaternion(object):
         )
 
     def ToEuler(self):
-        """Return Euler angle representation of the corresponding rotation."""
+        """The Euler angle representation of the corresponding rotation.
+
+        Return (roll, pitch, yaw)
+        """
         w, x, y, z = self.w, self.x, self.y, self.z
         roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x**2 + y**2))
         sinp = np.arcsin(2 * (w * y - z * x))
@@ -310,6 +313,16 @@ class Translation(Vector3):
     """Representing Translation by Vector3"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def __add__(self, other):
+        vector3 = super().__add__(other)
+        if isinstance(other, Translation):
+            return Translation(vector3.x, vector3.y, vector3.z)
+        else:
+            return vector3
+
+    def __repr__(self):
+        return "Translation({})".format(super().__repr__())
 
 
 class Rotation(Quaternion):
@@ -338,6 +351,11 @@ class Rotation(Quaternion):
             return Translation(
                 translation.x, translation.y, translation.z
             )
+        elif isinstance(other, Rotation):
+            quaternion = super().__mul__(other)
+            return Rotation(
+                quaternion.w, quaternion.x, quaternion.y, quaternion.z
+            )
         else:
             return super().__mul__(other)
 
@@ -346,6 +364,9 @@ class Rotation(Quaternion):
         return Rotation(
             quaternion.w, quaternion.x, quaternion.y, quaternion.z
         )
+
+    def __repr__(self):
+        return "Rotation({})".format(super().__repr__())
 
 
 class Rigid(object):
@@ -395,19 +416,20 @@ class Rigid(object):
         return self._translation
 
     def __repr__(self):
-        message_template = \
-            "translation(x,y,z), rotation(w,x,y,z):" \
-            + "({}, {}, {}), ({}, {}, {}, {})"
-        return message_template.format(
-            self._translation.x, self._translation.y, self._translation.z,
-            self._rotation.w, self._rotation.x,
-            self._rotation.y, self._rotation.z
-        )
+        return "Rigid({}, {})".format(self.translation, self.rotation)
 
 
 class Rigid3(Rigid):
     """Representing Rigid Transformation living in SE(3)."""
-    pass
+    def __mul__(self, other):
+        rigid = super().__mul__(other)
+        if isinstance(other, Rigid3):
+            return Rigid3(rigid.translation, rigid.rotation)
+        else:
+            return rigid
+
+    def __repr__(self):
+        return "Rigid3({}, {})".format(self.translation, self.rotation)
 
 
 class Rigid2(Rigid):
@@ -459,7 +481,7 @@ class Rigid2(Rigid):
             )
 
     def __repr__(self):
-        return "x,y,theta: {}, {}, {}".format(self.x, self.y, self.theta)
+        return "Rigid2(x,y,theta: {:.4f}, {:.4f}, {:.4f})".format(self.x, self.y, self.theta)
 
 
 class TestVector2(unittest.TestCase):
