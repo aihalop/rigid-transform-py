@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="rigid-transform-py", # Replace with your own username
+    name="rigid-transform-py",
     version="0.0.1",
     author="Jin Cao",
     author_email="aihalop@gmail.com",
@@ -20,4 +20,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        "numpy"
+    ]
 )
