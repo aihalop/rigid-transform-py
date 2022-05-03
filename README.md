@@ -2,10 +2,13 @@
 
 This library provides classes to manipulate rigid transformation.
 
-![demo](images/transform.svg "transform demostration")
+![rigid transform illustration](images/transform.svg "transform illustration")
 
 ## Install
 
+```Shell
+pip install rigid-transform-py
+```
 
 ## Usage
 

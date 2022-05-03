@@ -11,7 +11,7 @@ setuptools.setup(
     description="Library for Rigid body Transformation.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/aihalop/rigid-transform-py",
     packages=setuptools.find_packages("src"),
     package_dir={"": "src"},
     classifiers=[
