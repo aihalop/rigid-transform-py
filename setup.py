@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="rigid-transform-py",
-    version="0.0.1",
+    version="0.1.0",
     author="Jin Cao",
     author_email="aihalop@gmail.com",
     description="Library for Rigid body Transformation.",
